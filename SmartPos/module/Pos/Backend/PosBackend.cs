@@ -68,7 +68,7 @@ ORDER BY p.ProductName;", conn))
             using (SqlConnection conn = new SqlConnection(_connectionString))
             using (SqlCommand cmd = new SqlCommand(PosSqlTemplate.FindCustomerByPhone, conn))
             {
-                cmd.Parameters.AddWithValue("@Phone", term);
+                cmd.Parameters.AddWithValue("@Term", "%" + term + "%");
                 conn.Open();
                 using (SqlDataReader rdr = cmd.ExecuteReader())
                 {
@@ -93,7 +93,7 @@ ORDER BY p.ProductName;", conn))
             using (SqlConnection conn = new SqlConnection(_connectionString))
             using (SqlCommand cmd = new SqlCommand(PosSqlTemplate.FindCustomerByPhone, conn))
             {
-                cmd.Parameters.AddWithValue("@Phone", phone);
+                cmd.Parameters.AddWithValue("@Term", phone); // Vẫn giữ tìm chính xác nếu gọi hàm này
                 conn.Open();
                 using (SqlDataReader rdr = cmd.ExecuteReader())
                 {

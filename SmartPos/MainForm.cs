@@ -73,29 +73,50 @@ namespace SmartPos
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            lblUserNav = new Label { Text = UserSession.CurrentUser?.FullName, Font = new Font("Segoe UI", 10, FontStyle.Bold), Location = new Point(20, 15), AutoSize = true };
-            lblRoleNav = new Label { Text = UserSession.CurrentUser?.Role.ToString(), Font = new Font("Segoe UI", 8), ForeColor = Color.Gray, Location = new Point(20, 38), AutoSize = true };
+            lblUserNav = new Label { Text = UserSession.CurrentUser?.FullName, Font = new Font("Segoe UI", 11, FontStyle.Bold), Location = new Point(20, 15), AutoSize = true };
+            lblRoleNav = new Label { Text = "Chức vụ: " + (UserSession.CurrentUser?.Role.ToString() ?? "Admin"), Font = new Font("Segoe UI", 9), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(20, 38), AutoSize = true };
             
-            lblTime = new Label { Text = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy"), Font = new Font("Segoe UI", 10), Location = new Point(400, 25), AutoSize = true, Anchor = AnchorStyles.Top };
+            // Container cho phần bên phải của header
+            var pnlRight = new Panel
+            {
+                Height = panelHeader.Height,
+                Width = 400,
+                Dock = DockStyle.Right,
+                BackColor = Color.Transparent
+            };
+
+            lblTime = new Label 
+            { 
+                Text = DateTime.Now.ToString("HH:mm:ss  dd/MM/yyyy"), 
+                Font = new Font("Consolas", 12, FontStyle.Bold), 
+                ForeColor = Color.FromArgb(30, 41, 59),
+                TextAlign = ContentAlignment.MiddleRight,
+                AutoSize = false,
+                Width = 250,
+                Height = 70,
+                Location = new Point(20, 0)
+            };
 
             Button btnLogout = new Button
             {
                 Text = "Đăng xuất",
-                Size = new Size(100, 35),
-                Location = new Point(panelHeader.Width - 120, 17),
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Size = new Size(110, 40),
+                Location = new Point(280, 15),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(255, 82, 82),
+                BackColor = Color.FromArgb(239, 68, 68), // Đỏ hiện đại
                 ForeColor = Color.White,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
                 Cursor = Cursors.Hand
             };
             btnLogout.FlatAppearance.BorderSize = 0;
             btnLogout.Click += (s, e) => { UserSession.Clear(); this.Close(); };
 
+            pnlRight.Controls.Add(lblTime);
+            pnlRight.Controls.Add(btnLogout);
+
             panelHeader.Controls.Add(lblUserNav);
             panelHeader.Controls.Add(lblRoleNav);
-            panelHeader.Controls.Add(lblTime);
-            panelHeader.Controls.Add(btnLogout);
+            panelHeader.Controls.Add(pnlRight);
 
             // 3. Content Area
             panelContent = new Panel

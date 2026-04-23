@@ -12,9 +12,9 @@ WHERE p.IsActive = 1
 ORDER BY p.ProductName;";
 
         public const string FindCustomerByPhone = @"
-SELECT CustomerID, FullName, Phone, Address, ISNULL(TotalPoints, 0) as TotalPoints
+SELECT TOP 10 CustomerID, FullName, Phone, Address, ISNULL(TotalPoints, 0) as TotalPoints
 FROM dbo.Customers
-WHERE (Phone = @Phone OR FullName LIKE '%' + @Phone + '%') AND IsActive = 1;";
+WHERE (Phone LIKE @Term OR FullName LIKE @Term) AND IsActive = 1;";
 
         public const string InsertCustomer = @"
 INSERT INTO dbo.Customers (FullName, Phone, Address, TotalPoints, IsActive, CreatedAt)
@@ -40,6 +40,20 @@ BEGIN
     SET TotalPoints = ISNULL(TotalPoints, 0) - @UsedPoints + @EarnedPoints,
         TotalSpent = ISNULL(TotalSpent, 0) + @TotalAmount
     WHERE CustomerID = @CustomerID;
+
+    -- Lưu lịch sử dùng điểm
+    IF @UsedPoints > 0
+    BEGIN
+        INSERT INTO dbo.CustomerPointsHistory (CustomerID, Points, Type, Description, CreatedAt)
+        VALUES (@CustomerID, -@UsedPoints, N'Trừ', N'Dùng điểm cho hóa đơn ' + @InvoiceCode, GETDATE());
+    END
+
+    -- Lưu lịch sử tích điểm mới
+    IF @EarnedPoints > 0
+    BEGIN
+        INSERT INTO dbo.CustomerPointsHistory (CustomerID, Points, Type, Description, CreatedAt)
+        VALUES (@CustomerID, @EarnedPoints, N'Cộng', N'Tích điểm từ hóa đơn ' + @InvoiceCode, GETDATE());
+    END
 END;";
 
         public const string InsertInvoiceItem = @"

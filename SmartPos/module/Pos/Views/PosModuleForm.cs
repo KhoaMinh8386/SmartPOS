@@ -50,20 +50,19 @@ namespace SmartPos.Module.Pos
 
         private void InitializeComponent()
         {
-            this.Text = "SMART POS - BÁN HÀNG";
-            this.BackColor = Color.FromArgb(245, 245, 245);
+            this.Text = "SMART POS - HỆ THỐNG BÁN HÀNG CHUYÊN NGHIỆP";
+            this.BackColor = Color.FromArgb(240, 242, 245);
             this.Font = new Font("Segoe UI", 10F);
 
-            // ─── ROOT: 2 columns 65/35 ───────────────────────────────────────────
             var root = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
                 RowCount = 1,
-                Padding = new Padding(0)
+                Padding = new Padding(10)
             };
-            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F));
-            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68F));
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32F));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
             // ════════════════════════════════════════════════════════════════════
@@ -93,28 +92,38 @@ namespace SmartPos.Module.Pos
             };
             left.Controls.Add(lblShiftInfo, 0, 0);
 
-            // Row 1 – Search box (txtSearch Dock=Fill)
-            var pnlSearch = new Panel { Dock = DockStyle.Fill };
+            // Row 1 – Search box
+            var pnlSearchContainer = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 5, 0, 5) };
             txtSearch = new TextBox
             {
                 Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 13F)
+                Font = new Font("Segoe UI", 14F),
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.White
             };
+            // Placeholder-like effect
+            txtSearch.Text = "🔍 Nhập tên sản phẩm hoặc quét mã vạch...";
+            txtSearch.ForeColor = Color.Gray;
+            txtSearch.Enter += (s, e) => { if (txtSearch.Text.Contains("🔍")) { txtSearch.Text = ""; txtSearch.ForeColor = Color.Black; } };
+            txtSearch.Leave += (s, e) => { if (string.IsNullOrEmpty(txtSearch.Text)) { txtSearch.Text = "🔍 Nhập tên sản phẩm hoặc quét mã vạch..."; txtSearch.ForeColor = Color.Gray; } };
+            
             txtSearch.TextChanged += TxtSearch_TextChanged;
             txtSearch.KeyDown += TxtSearch_KeyDown;
             
-            pnlSearch.Controls.Add(txtSearch);
-            left.Controls.Add(pnlSearch, 0, 1);
+            pnlSearchContainer.Controls.Add(txtSearch);
+            left.Controls.Add(pnlSearchContainer, 0, 1);
 
             // Floating Suggestions Listbox (Đưa vào panel left nhưng ở lớp trên cùng)
             lstSuggestions = new ListBox
             {
                 Visible = false,
-                Width = 550, Height = 250,
+                Width = 600, Height = 300,
                 Font = new Font("Segoe UI", 11F),
-                Location = new Point(8, 82), // Sát ngay dưới thanh search
+                Location = new Point(8, 85), // Sát ngay dưới thanh search
                 BorderStyle = BorderStyle.FixedSingle,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                BackColor = Color.White,
+                ForeColor = Color.Black
             };
             lstSuggestions.DoubleClick += (s, e) => AddSelectedSuggestion();
             left.Controls.Add(lstSuggestions); // Add vào left để không bị clipping bởi pnlSearch
@@ -127,27 +136,38 @@ namespace SmartPos.Module.Pos
                 BackgroundColor = Color.White,
                 BorderStyle = BorderStyle.None,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                RowTemplate = { Height = 36 },
+                RowTemplate = { Height = 40 },
                 AllowUserToAddRows = false,
-                GridColor = Color.FromArgb(220, 220, 220),
-                Font = new Font("Segoe UI", 10F)
+                GridColor = Color.FromArgb(230, 233, 237),
+                Font = new Font("Segoe UI", 10F),
+                EnableHeadersVisualStyles = false,
+                ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None,
+                CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal
             };
+            dgvCart.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 73, 94);
+            dgvCart.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvCart.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            dgvCart.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dgvCart.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
+            dgvCart.DefaultCellStyle.SelectionBackColor = Color.FromArgb(226, 232, 240);
+            dgvCart.DefaultCellStyle.SelectionForeColor = Color.Black;
             SetupCartGrid();
             left.Controls.Add(dgvCart, 0, 2);
 
             // Row 3 – Actions
-            var pnlActions = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 6, 0, 6) };
+            var pnlActions = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 10, 0, 0) };
             var btnClear = new Button
             {
-                Text = "🗑Xóa tất cả",
-                Height = 38, Width = 160,
-                BackColor = Color.FromArgb(198, 40, 40),
+                Text = "XÓA TẤT CẢ (F4)",
+                Height = 42, Width = 180,
+                BackColor = Color.FromArgb(239, 68, 68),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold)
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Cursor = Cursors.Hand
             };
             btnClear.FlatAppearance.BorderSize = 0;
-            btnClear.Click += (s, e) => { _cart.Clear(); RefreshCart(); };
+            btnClear.Click += (s, e) => { if(_cart.Any()) { if(MessageBox.Show("Xóa toàn bộ giỏ hàng?", "Xác nhận", MessageBoxButtons.YesNo) == DialogResult.Yes) { _cart.Clear(); RefreshCart(); } } };
             pnlActions.Controls.Add(btnClear);
             left.Controls.Add(pnlActions, 0, 3);
 
@@ -159,219 +179,154 @@ namespace SmartPos.Module.Pos
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
                 RowCount = 4,
-                Padding = new Padding(10, 8, 8, 8),
-                BackColor = Color.White
+                Padding = new Padding(10, 0, 5, 0),
+                BackColor = Color.FromArgb(240, 242, 245)
             };
             right.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 110)); // customer
+            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 130)); // customer
             right.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // summary
-            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 130)); // payment input
-            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 64));  // checkout btn
+            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 150)); // payment input
+            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));  // checkout btn
 
             // ── Row 0: Customer ──────────────────────────────────────────────────
-            var grpCustomer = new GroupBox
-            {
-                Text = "KHÁCH HÀNG",
-                Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                Padding = new Padding(6, 16, 6, 4)
-            };
-            var tlpCust = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 3,
-                Padding = new Padding(0)
-            };
-            tlpCust.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpCust.RowStyles.Add(new RowStyle(SizeType.Absolute, 28)); // txtPhone
-            tlpCust.RowStyles.Add(new RowStyle(SizeType.Absolute, 22)); // lblCustomerInfo
-            tlpCust.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // chkUsePoints
-
-            txtPhone = new TextBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 11F) };
+            var pnlCustomerCard = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(15), BorderStyle = BorderStyle.None };
+            var lblCustHeader = new Label { Text = "THÔNG TIN KHÁCH HÀNG", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = Color.FromArgb(71, 85, 105), Dock = DockStyle.Top, Height = 25 };
+            
+            txtPhone = new TextBox { Dock = DockStyle.Top, Font = new Font("Segoe UI", 12F), BorderStyle = BorderStyle.FixedSingle };
             txtPhone.KeyDown += TxtPhone_KeyDown;
             txtPhone.TextChanged += TxtPhone_TextChanged;
 
+            // Khởi tạo danh sách gợi ý khách hàng
             lstCustomerSuggestions = new ListBox
             {
                 Visible = false,
-                Width = 250, Height = 150,
+                Width = 250, Height = 180,
                 Font = new Font("Segoe UI", 10F),
-                Location = new Point(10, 60), // Ngay dưới txtPhone
+                Location = new Point(15, 60), // Nằm dưới ô nhập SĐT
                 BorderStyle = BorderStyle.FixedSingle,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                BackColor = Color.White,
+                ForeColor = Color.Black
             };
+            lstCustomerSuggestions.Click += (s, e) => SelectCustomerFromList();
             lstCustomerSuggestions.DoubleClick += (s, e) => SelectCustomerFromList();
 
             lblCustomerInfo = new Label
             {
-                Dock = DockStyle.Fill,
-                Text = "Khách lẻ",
-                ForeColor = Color.FromArgb(33, 150, 243),
-                Font = new Font("Segoe UI", 9F, FontStyle.Italic),
+                Dock = DockStyle.Top,
+                Height = 30,
+                Text = "Khách lẻ (Walk-in)",
+                ForeColor = Color.FromArgb(14, 165, 233),
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold | FontStyle.Italic),
                 TextAlign = ContentAlignment.MiddleLeft
             };
+            
             chkUsePoints = new CheckBox
             {
-                Dock = DockStyle.Fill,
+                Dock = DockStyle.Top,
                 Text = "Dùng điểm tích lũy",
                 Visible = false,
                 Font = new Font("Segoe UI", 9F)
             };
             chkUsePoints.CheckedChanged += (s, e) => UpdateTotal();
 
-            tlpCust.Controls.Add(txtPhone, 0, 0);
-            tlpCust.Controls.Add(lblCustomerInfo, 0, 1);
-            tlpCust.Controls.Add(chkUsePoints, 0, 2);
-            grpCustomer.Controls.Add(lstCustomerSuggestions); // Add listbox vào groupbox
+            pnlCustomerCard.Controls.Add(lstCustomerSuggestions); // Add listbox trước để BringToFront
+            pnlCustomerCard.Controls.Add(chkUsePoints);
+            pnlCustomerCard.Controls.Add(lblCustomerInfo);
+            pnlCustomerCard.Controls.Add(txtPhone);
+            pnlCustomerCard.Controls.Add(lblCustHeader);
             lstCustomerSuggestions.BringToFront();
-            grpCustomer.Controls.Add(tlpCust);
-            right.Controls.Add(grpCustomer, 0, 0);
+            
+            right.Controls.Add(pnlCustomerCard, 0, 0);
 
-            // ── Row 1: Summary (subtotal, voucher, points, total) ────────────────
+            var pnlSummaryCard = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(15, 5, 15, 15), BorderStyle = BorderStyle.None };
             var tlpSummary = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
                 RowCount = 5,
-                Padding = new Padding(4, 6, 4, 0)
+                Padding = new Padding(0)
             };
             tlpSummary.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55F));
             tlpSummary.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
-            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 16F)); // subtotal
-            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 16F)); // voucher label
+            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 15F)); // subtotal
+            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 15F)); // voucher label
             tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 20F)); // voucher input
-            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 16F)); // points
-            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 32F)); // TOTAL
+            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 15F)); // points
+            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 35F)); // TOTAL
 
-            // Row 0: Subtotal
             tlpSummary.Controls.Add(MakeLabel("Tạm tính:"), 0, 0);
             lblSubTotal = MakeValueLabel("0");
             tlpSummary.Controls.Add(lblSubTotal, 1, 0);
 
-            // Row 1: Voucher label
-            tlpSummary.Controls.Add(MakeLabel("Mã Voucher:"), 0, 1);
-            lblVoucherDiscount = MakeValueLabel("-0", Color.FromArgb(198, 40, 40));
+            tlpSummary.Controls.Add(MakeLabel("Voucher:"), 0, 1);
+            lblVoucherDiscount = MakeValueLabel("-0", Color.FromArgb(239, 68, 68));
             tlpSummary.Controls.Add(lblVoucherDiscount, 1, 1);
 
-            // Row 2: Voucher input
-            txtVoucher = new TextBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 11F) };
+            txtVoucher = new TextBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 11F), BorderStyle = BorderStyle.FixedSingle };
             txtVoucher.KeyDown += TxtVoucher_KeyDown;
-            var lblVoucherHint = new Label
-            {
-                Dock = DockStyle.Fill,
-                Text = "↵ Enter để áp dụng",
-                ForeColor = Color.Gray,
-                Font = new Font("Segoe UI", 8F, FontStyle.Italic),
-                TextAlign = ContentAlignment.MiddleLeft
-            };
             tlpSummary.Controls.Add(txtVoucher, 0, 2);
-            tlpSummary.Controls.Add(lblVoucherHint, 1, 2);
+            tlpSummary.Controls.Add(new Label { Text = "↵ Apply", Font = new Font("Segoe UI", 8, FontStyle.Italic), ForeColor = Color.Gray, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 1, 2);
 
-            // Row 3: Points
             tlpSummary.Controls.Add(MakeLabel("Giảm điểm:"), 0, 3);
-            lblPointsDiscount = MakeValueLabel("-0", Color.FromArgb(198, 40, 40));
+            lblPointsDiscount = MakeValueLabel("-0", Color.FromArgb(239, 68, 68));
             tlpSummary.Controls.Add(lblPointsDiscount, 1, 3);
 
-            // Row 4: TOTAL (span 2 cols via separate panel)
-            var pnlTotal = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(237, 247, 237) };
-            var lblTotalTitle = new Label
-            {
-                Text = "TỔNG CỘNG",
-                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(33, 33, 33),
-                AutoSize = false,
-                Dock = DockStyle.Left,
-                Width = 110,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(6, 0, 0, 0)
-            };
+            var pnlTotalHighlight = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(241, 245, 249), Padding = new Padding(10) };
+            var lblTotalTitle = new Label { Text = "TỔNG CỘNG", Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = Color.FromArgb(71, 85, 105), Dock = DockStyle.Top };
             lblTotal = new Label
             {
                 Text = "0",
-                Font = new Font("Segoe UI", 22F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(198, 40, 40),
+                Font = new Font("Segoe UI", 24F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(220, 38, 38),
                 Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleRight,
-                Padding = new Padding(0, 0, 8, 0)
+                TextAlign = ContentAlignment.MiddleRight
             };
-            pnlTotal.Controls.Add(lblTotal);
-            pnlTotal.Controls.Add(lblTotalTitle);
-            tlpSummary.SetColumnSpan(pnlTotal, 2);
-            tlpSummary.Controls.Add(pnlTotal, 0, 4);
+            pnlTotalHighlight.Controls.Add(lblTotal);
+            pnlTotalHighlight.Controls.Add(lblTotalTitle);
+            tlpSummary.SetColumnSpan(pnlTotalHighlight, 2);
+            tlpSummary.Controls.Add(pnlTotalHighlight, 0, 4);
 
-            right.Controls.Add(tlpSummary, 0, 1);
+            pnlSummaryCard.Controls.Add(tlpSummary);
+            right.Controls.Add(pnlSummaryCard, 0, 1);
 
-            // ── Row 2: Payment method + Paid amount ─────────────────────────────
-            var tlpPay = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 4,
-                Padding = new Padding(4, 4, 4, 0)
-            };
-            tlpPay.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpPay.RowStyles.Add(new RowStyle(SizeType.Absolute, 20)); // label
-            tlpPay.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // combo
-            tlpPay.RowStyles.Add(new RowStyle(SizeType.Absolute, 20)); // label
-            tlpPay.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // numPaid + change
+            var pnlPaymentCard = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(15), BorderStyle = BorderStyle.None };
+            var tlpPay = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4 };
+            tlpPay.RowStyles.Add(new RowStyle(SizeType.Absolute, 20)); 
+            tlpPay.RowStyles.Add(new RowStyle(SizeType.Absolute, 35)); 
+            tlpPay.RowStyles.Add(new RowStyle(SizeType.Absolute, 20)); 
+            tlpPay.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
-            tlpPay.Controls.Add(MakeLabel("Phương thức thanh toán:"), 0, 0);
-            cboPaymentMethod = new ComboBox
-            {
-                Dock = DockStyle.Fill,
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Font = new Font("Segoe UI", 10F)
-            };
+            tlpPay.Controls.Add(MakeLabel("PHƯƠNG THỨC:"), 0, 0);
+            cboPaymentMethod = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 11F) };
             cboPaymentMethod.Items.AddRange(new[] { "Tiền mặt", "Chuyển khoản" });
             cboPaymentMethod.SelectedIndex = 0;
             tlpPay.Controls.Add(cboPaymentMethod, 0, 1);
 
-            tlpPay.Controls.Add(MakeLabel("Tiền khách đưa:"), 0, 2);
+            tlpPay.Controls.Add(MakeLabel("TIỀN KHÁCH ĐƯA:"), 0, 2);
+            var pnlPaidInput = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+            pnlPaidInput.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60F));
+            pnlPaidInput.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
 
-            var pnlPaid = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 1,
-                Padding = new Padding(0)
-            };
-            pnlPaid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60F));
-            pnlPaid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
-            pnlPaid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-
-            numPaid = new NumericUpDown
-            {
-                Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 14F, FontStyle.Bold),
-                Maximum = 1_000_000_000,
-                ThousandsSeparator = true,
-                TextAlign = HorizontalAlignment.Right
-            };
+            numPaid = new NumericUpDown { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 16F, FontStyle.Bold), Maximum = 1_000_000_000, ThousandsSeparator = true, TextAlign = HorizontalAlignment.Right };
             numPaid.ValueChanged += (s, e) => CalculateChange();
-            lblChange = new Label
-            {
-                Dock = DockStyle.Fill,
-                Text = "Thối: 0đ",
-                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(27, 94, 32),
-                TextAlign = ContentAlignment.MiddleRight,
-                Padding = new Padding(0, 0, 4, 0)
-            };
-            pnlPaid.Controls.Add(numPaid, 0, 0);
-            pnlPaid.Controls.Add(lblChange, 1, 0);
-            tlpPay.Controls.Add(pnlPaid, 0, 3);
+            lblChange = new Label { Dock = DockStyle.Fill, Text = "Thối: 0đ", Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = Color.FromArgb(16, 185, 129), TextAlign = ContentAlignment.MiddleRight };
+            
+            pnlPaidInput.Controls.Add(numPaid, 0, 0);
+            pnlPaidInput.Controls.Add(lblChange, 1, 0);
+            tlpPay.Controls.Add(pnlPaidInput, 0, 3);
+            
+            pnlPaymentCard.Controls.Add(tlpPay);
+            right.Controls.Add(pnlPaymentCard, 0, 2);
 
-            right.Controls.Add(tlpPay, 0, 2);
-
-            // ── Row 3: CHECKOUT button ───────────────────────────────────────────
+            // ── Row 3: CHECKOUT button
             var btnCheckout = new Button
             {
-                Text = "THANH TOÁN",
+                Text = "THANH TOÁN (F12)",
                 Dock = DockStyle.Fill,
-                BackColor = Color.FromArgb(27, 94, 32),
+                BackColor = Color.FromArgb(16, 185, 129),
                 ForeColor = Color.White,
-                Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+                Font = new Font("Segoe UI", 16F, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
             };
@@ -529,10 +484,17 @@ namespace SmartPos.Module.Pos
         private void TxtPhone_TextChanged(object sender, EventArgs e)
         {
             string term = txtPhone.Text.Trim();
-            if (term.Length < 3) { lstCustomerSuggestions.Visible = false; return; }
+            if (string.IsNullOrEmpty(term))
+            {
+                _currentCustomer = null;
+                ApplyCustomer();
+                lstCustomerSuggestions.Visible = false;
+                return;
+            }
+            if (term.Length < 2) { lstCustomerSuggestions.Visible = false; return; }
 
-            var customers = _controller.FindCustomers(term); // Cần thêm method này vào Controller
-            if (customers.Any())
+            var customers = _controller.FindCustomers(term);
+            if (customers != null && customers.Any())
             {
                 lstCustomerSuggestions.DataSource = customers;
                 lstCustomerSuggestions.DisplayMember = "FullName";
@@ -574,13 +536,15 @@ namespace SmartPos.Module.Pos
             if (_currentCustomer != null)
             {
                 txtPhone.Text = _currentCustomer.Phone;
-                lblCustomerInfo.Text = $"{_currentCustomer.FullName} - Điểm: {_currentCustomer.TotalPoints:N0}";
+                lblCustomerInfo.Text = $"KHACH: {_currentCustomer.FullName} | Diem: {_currentCustomer.TotalPoints:N0}";
+                lblCustomerInfo.ForeColor = Color.DarkGreen;
                 chkUsePoints.Visible = true;
                 chkUsePoints.Text = $"Dùng {_currentCustomer.TotalPoints:N0} điểm (-{_currentCustomer.TotalPoints:N0}đ)";
             }
             else
             {
-                lblCustomerInfo.Text = "Khách lẻ (Chưa có trong DB)";
+                lblCustomerInfo.Text = "Khách lẻ (Walk-in)";
+                lblCustomerInfo.ForeColor = Color.FromArgb(33, 150, 243);
                 chkUsePoints.Visible = false;
             }
             UpdateTotal();
@@ -650,7 +614,7 @@ namespace SmartPos.Module.Pos
                     VoucherDiscount = _voucherDiscount,
                     PointsDiscount = _pointsDiscount,
                     UsedPoints = _usedPoints,
-                    EarnedPoints = (int)(totalAmount * 0.01m), // Tích 1% điểm
+                    EarnedPoints = (int)(totalAmount * 0.001m), // Tích 0.1% điểm (1000đ = 1 điểm)
                     Items = _cart
                 };
 
