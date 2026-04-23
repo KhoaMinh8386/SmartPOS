@@ -56,6 +56,8 @@
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    
+    <!-- Module: Suppliers -->
     <Compile Include="module\Suppliers\Views\SupplierModuleForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -63,6 +65,8 @@
     <Compile Include="module\Suppliers\Templates\SupplierSqlTemplate.cs" />
     <Compile Include="module\Suppliers\Backend\SupplierBackend.cs" />
     <Compile Include="module\Suppliers\Controllers\SupplierController.cs" />
+    
+    <!-- Module: Products -->
     <Compile Include="module\Products\Models\ProductModels.cs" />
     <Compile Include="module\Products\Templates\ProductSqlTemplate.cs" />
     <Compile Include="module\Products\Backend\ProductBackend.cs" />
@@ -73,6 +77,8 @@
     <Compile Include="module\Products\Views\CategoryModuleForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    
+    <!-- Module: Pos -->
     <Compile Include="module\Pos\Models\PosModels.cs" />
     <Compile Include="module\Pos\Templates\PosSqlTemplate.cs" />
     <Compile Include="module\Pos\Backend\PosBackend.cs" />
@@ -83,6 +89,34 @@
     <Compile Include="module\Pos\Views\InvoiceHistoryForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    
+    <!-- Module: PurchaseOrders -->
+    <Compile Include="module\PurchaseOrders\Views\PurchaseOrderModuleForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="module\PurchaseOrders\Models\PurchaseOrderModels.cs" />
+    <Compile Include="module\PurchaseOrders\Templates\PurchaseOrderSqlTemplate.cs" />
+    <Compile Include="module\PurchaseOrders\Backend\PurchaseOrderBackend.cs" />
+    <Compile Include="module\PurchaseOrders\Controllers\PurchaseOrderController.cs" />
+    
+    <!-- Module: InventoryAudit -->
+    <Compile Include="module\InventoryAudit\Views\InventoryAuditModuleForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="module\InventoryAudit\Models\InventoryAuditModels.cs" />
+    <Compile Include="module\InventoryAudit\Templates\InventoryAuditSqlTemplate.cs" />
+    <Compile Include="module\InventoryAudit\Backend\InventoryAuditBackend.cs" />
+    <Compile Include="module\InventoryAudit\Controllers\InventoryAuditController.cs" />
+    
+    <!-- Module: Promotions -->
+    <Compile Include="module\Promotions\Views\PromotionModuleForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="module\Promotions\Models\PromotionModels.cs" />
+    <Compile Include="module\Promotions\Templates\PromotionSqlTemplate.cs" />
+    <Compile Include="module\Promotions\Backend\PromotionBackend.cs" />
+    <Compile Include="module\Promotions\Controllers\PromotionController.cs" />
+    
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
