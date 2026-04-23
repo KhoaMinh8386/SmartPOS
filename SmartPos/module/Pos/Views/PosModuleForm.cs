@@ -5,6 +5,11 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using SmartPos.Module.Pos.Controllers;
+using SmartPos.Module.Pos.Models;
+using SmartPos.Module.SalesHistory.Backend;
+using SmartPos.Module.SalesHistory.Models;
+
 namespace SmartPos.Module.Pos
 {
     public partial class PosModuleForm : Form
