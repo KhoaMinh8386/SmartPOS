@@ -19,6 +19,7 @@ namespace SmartPos.Module.Products.Models
         public string CategoryName { get; set; }
         public decimal RetailPrice { get; set; }
         public string Location { get; set; }
+        public decimal StockQuantity { get; set; }
         public bool IsActive { get; set; }
     }
 

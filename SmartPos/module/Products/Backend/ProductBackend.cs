@@ -66,6 +66,7 @@ namespace SmartPos.Module.Products.Backend
                             CategoryName = rdr["CategoryName"].ToString(),
                             RetailPrice = (decimal)rdr["RetailPrice"],
                             Location = rdr["Location"]?.ToString(),
+                            StockQuantity = (decimal)rdr["StockQuantity"],
                             IsActive = (bool)rdr["IsActive"]
                         });
                     }

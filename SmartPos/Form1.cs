@@ -376,22 +376,46 @@ namespace SmartPos
 
         private void BuildLogo()
         {
-            Bitmap bmp = new Bitmap(pictureBoxLogo.Width, pictureBoxLogo.Height);
-            using (Graphics g = Graphics.FromImage(bmp))
+            try
             {
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-                g.Clear(Color.Transparent);
-                Rectangle rect = new Rectangle(20, 5, 60, 50);
-                using (LinearGradientBrush brush = new LinearGradientBrush(rect, Color.FromArgb(33, 150, 243), Color.FromArgb(21, 101, 192), 45f))
+                string logoPath = System.IO.Path.Combine(Application.StartupPath, "access", "img", "logo.png");
+                
+                // Fallback for development if not in bin
+                if (!System.IO.File.Exists(logoPath))
                 {
-                    g.FillEllipse(brush, rect);
+                    logoPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "access", "img", "logo.png");
                 }
-                using (Font f = new Font("Segoe UI", 12, FontStyle.Bold))
+
+                if (System.IO.File.Exists(logoPath))
                 {
-                    g.DrawString("POS", f, Brushes.White, rect, new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
+                    pictureBoxLogo.Image = Image.FromFile(logoPath);
+                    pictureBoxLogo.SizeMode = PictureBoxSizeMode.Zoom;
+                }
+                else
+                {
+                    // Fallback to drawn logo if file missing
+                    Bitmap bmp = new Bitmap(pictureBoxLogo.Width, pictureBoxLogo.Height);
+                    using (Graphics g = Graphics.FromImage(bmp))
+                    {
+                        g.SmoothingMode = SmoothingMode.AntiAlias;
+                        g.Clear(Color.Transparent);
+                        Rectangle rect = new Rectangle(20, 5, 60, 50);
+                        using (LinearGradientBrush brush = new LinearGradientBrush(rect, Color.FromArgb(33, 150, 243), Color.FromArgb(21, 101, 192), 45f))
+                        {
+                            g.FillEllipse(brush, rect);
+                        }
+                        using (Font f = new Font("Segoe UI", 12, FontStyle.Bold))
+                        {
+                            g.DrawString("POS", f, Brushes.White, rect, new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
+                        }
+                    }
+                    pictureBoxLogo.Image = bmp;
                 }
             }
-            pictureBoxLogo.Image = bmp;
+            catch
+            {
+                // Silent fail if image loading errors
+            }
         }
     }
 }

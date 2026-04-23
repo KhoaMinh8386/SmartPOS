@@ -20,22 +20,22 @@ namespace SmartPos.Module.Reports.Views
 
         private void InitializeUi()
         {
-            Text = "Bao cao San pham";
+            Text = "Báo cáo Sản phẩm";
             Width = 1000;
             Height = 700;
             StartPosition = FormStartPosition.CenterParent;
 
             tabMain = new TabControl { Dock = DockStyle.Fill };
             
-            var tabOverview = new TabPage("Tong quan SP");
+            var tabOverview = new TabPage("Tổng quan SP");
             dgvOverview = CreateGrid();
             tabOverview.Controls.Add(dgvOverview);
 
-            var tabLowStock = new TabPage("Sap het hang");
+            var tabLowStock = new TabPage("Sắp hết hàng");
             dgvLowStock = CreateGrid();
             tabLowStock.Controls.Add(dgvLowStock);
 
-            var tabExpiry = new TabPage("Sap het han");
+            var tabExpiry = new TabPage("Sắp hết hạn");
             dgvExpiry = CreateGrid();
             tabExpiry.Controls.Add(dgvExpiry);
 
@@ -57,14 +57,35 @@ namespace SmartPos.Module.Reports.Views
 
         private void LoadData()
         {
-            // Overview: Performance for last 30 days
             dgvOverview.DataSource = _controller.GetProductPerformance(DateTime.Now.AddDays(-30), DateTime.Now);
+            FormatOverviewGrid();
             
-            // Low Stock: Filtered from controller or separate method
             dgvLowStock.DataSource = _controller.GetLowStockAlert();
+            FormatLowStockGrid();
 
-            // Expiry: Static sample for now or fetch
             // dgvExpiry.DataSource = ...
+        }
+
+        private void FormatOverviewGrid()
+        {
+            if (dgvOverview.Columns["ProductID"] != null) dgvOverview.Columns["ProductID"].HeaderText = "Mã SP";
+            if (dgvOverview.Columns["ProductName"] != null) dgvOverview.Columns["ProductName"].HeaderText = "Tên sản phẩm";
+            if (dgvOverview.Columns["SoldQuantity"] != null) dgvOverview.Columns["SoldQuantity"].HeaderText = "Đã bán";
+            if (dgvOverview.Columns["Revenue"] != null) dgvOverview.Columns["Revenue"].HeaderText = "Doanh thu";
+            if (dgvOverview.Columns["CostPrice"] != null) dgvOverview.Columns["CostPrice"].HeaderText = "Giá vốn";
+            
+            if (dgvOverview.Columns["Revenue"] != null) dgvOverview.Columns["Revenue"].DefaultCellStyle.Format = "N0";
+            if (dgvOverview.Columns["SoldQuantity"] != null) dgvOverview.Columns["SoldQuantity"].DefaultCellStyle.Format = "N2";
+        }
+
+        private void FormatLowStockGrid()
+        {
+            if (dgvLowStock.Columns["ProductID"] != null) dgvLowStock.Columns["ProductID"].HeaderText = "Mã SP";
+            if (dgvLowStock.Columns["ProductName"] != null) dgvLowStock.Columns["ProductName"].HeaderText = "Tên sản phẩm";
+            if (dgvLowStock.Columns["CurrentStock"] != null) dgvLowStock.Columns["CurrentStock"].HeaderText = "Tồn kho";
+            if (dgvLowStock.Columns["MinStockAlert"] != null) dgvLowStock.Columns["MinStockAlert"].HeaderText = "Mức cảnh báo";
+            
+            if (dgvLowStock.Columns["CurrentStock"] != null) dgvLowStock.Columns["CurrentStock"].DefaultCellStyle.Format = "N2";
         }
     }
 }
