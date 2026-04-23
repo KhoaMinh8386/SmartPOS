@@ -6,10 +6,10 @@ namespace SmartPos.Module.Pos
     public class CustomerInfo
     {
         public int CustomerID { get; set; }
-        public string CustomerName { get; set; }
+        public string FullName { get; set; }
         public string Phone { get; set; }
         public string Address { get; set; }
-        public int Points { get; set; }
+        public int TotalPoints { get; set; }
     }
 
     public class CartItem
@@ -29,7 +29,7 @@ namespace SmartPos.Module.Pos
         public int InvoiceID { get; set; }
         public string InvoiceCode { get; set; }
         public DateTime InvoiceDate { get; set; }
-        public string CustomerName { get; set; }
+        public string FullName { get; set; }
         public string StaffName { get; set; }
         public decimal TotalAmount { get; set; }
         public string PaymentMethodText { get; set; }
@@ -40,7 +40,7 @@ namespace SmartPos.Module.Pos
         public int InvoiceID { get; set; }
         public string InvoiceCode { get; set; }
         public DateTime InvoiceDate { get; set; }
-        public string CustomerName { get; set; }
+        public string FullName { get; set; }
         public string Phone { get; set; }
         public string StaffName { get; set; }
         public decimal TotalAmount { get; set; }

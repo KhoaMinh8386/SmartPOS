@@ -5,7 +5,7 @@ namespace SmartPos.Module.SalesHistory.Templates
         public const string GetSalesHistory = @"
 SELECT 
     i.InvoiceID, i.InvoiceCode, i.InvoiceDate, 
-    ISNULL(c.FullName, 'Khach le') as CustomerName,
+    ISNULL(c.FullName, 'Khach le') as FullName,
     u.FullName as StaffName,
     i.TotalAmount, i.DiscountAmount, i.PaidAmount, i.PaymentMethod, i.Status,
     CASE i.PaymentMethod WHEN 1 THEN 'Tien mat' WHEN 2 THEN 'Chuyen khoan' ELSE 'Khac' END as PaymentMethodText
@@ -22,7 +22,7 @@ ORDER BY i.InvoiceDate DESC;";
         public const string GetOrderDetail = @"
 SELECT 
     i.InvoiceID, i.InvoiceCode, i.InvoiceDate, 
-    ISNULL(c.FullName, 'Khach le') as CustomerName,
+    ISNULL(c.FullName, 'Khach le') as FullName,
     c.Phone as CustomerPhone,
     u.FullName as StaffName,
     i.TotalAmount, i.DiscountAmount, i.VoucherDiscount, 
@@ -55,7 +55,7 @@ WHERE ProductID = @ProductID AND WarehouseID = @WarehouseID;";
 
         public const string RevertCustomerLoyalty = @"
 UPDATE dbo.Customers 
-SET LoyaltyPoints = LoyaltyPoints - @PointsEarned + @PointsUsed,
+SET TotalPoints = ISNULL(TotalPoints, 0) - @PointsEarned + @PointsUsed,
     TotalSpent = TotalSpent - @Amount
 WHERE CustomerID = @CustomerID;";
 

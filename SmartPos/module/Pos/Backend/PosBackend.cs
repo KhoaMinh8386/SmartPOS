@@ -62,6 +62,32 @@ ORDER BY p.ProductName;", conn))
             return result;
         }
 
+        public List<CustomerInfo> FindCustomers(string term)
+        {
+            var result = new List<CustomerInfo>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            using (SqlCommand cmd = new SqlCommand(PosSqlTemplate.FindCustomerByPhone, conn))
+            {
+                cmd.Parameters.AddWithValue("@Phone", term);
+                conn.Open();
+                using (SqlDataReader rdr = cmd.ExecuteReader())
+                {
+                    while (rdr.Read())
+                    {
+                        result.Add(new CustomerInfo
+                        {
+                            CustomerID = (int)rdr["CustomerID"],
+                            FullName = rdr["FullName"].ToString(),
+                            Phone = rdr["Phone"].ToString(),
+                            Address = rdr["Address"]?.ToString(),
+                            TotalPoints = (int)rdr["TotalPoints"]
+                        });
+                    }
+                }
+            }
+            return result;
+        }
+
         public CustomerInfo FindCustomerByPhone(string phone)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
@@ -76,10 +102,10 @@ ORDER BY p.ProductName;", conn))
                         return new CustomerInfo
                         {
                             CustomerID = (int)rdr["CustomerID"],
-                            CustomerName = rdr["CustomerName"].ToString(),
+                            FullName = rdr["FullName"].ToString(),
                             Phone = rdr["Phone"].ToString(),
                             Address = rdr["Address"]?.ToString(),
-                            Points = (int)rdr["Points"]
+                            TotalPoints = (int)rdr["TotalPoints"]
                         };
                     }
                 }
@@ -181,7 +207,7 @@ ORDER BY p.ProductName;", conn))
                             InvoiceID = (int)rdr["InvoiceID"],
                             InvoiceCode = rdr["InvoiceCode"].ToString(),
                             InvoiceDate = (DateTime)rdr["InvoiceDate"],
-                            CustomerName = rdr["CustomerName"].ToString(),
+                            FullName = rdr["FullName"].ToString(),
                             StaffName = rdr["StaffName"].ToString(),
                             TotalAmount = (decimal)rdr["TotalAmount"],
                             PaymentMethodText = rdr["PaymentMethodText"].ToString()
@@ -210,7 +236,7 @@ ORDER BY p.ProductName;", conn))
                                 InvoiceID = (int)rdr["InvoiceID"],
                                 InvoiceCode = rdr["InvoiceCode"].ToString(),
                                 InvoiceDate = (DateTime)rdr["InvoiceDate"],
-                                CustomerName = rdr["CustomerName"].ToString(),
+                                FullName = rdr["FullName"].ToString(),
                                 Phone = rdr["Phone"]?.ToString(),
                                 StaffName = rdr["StaffName"].ToString(),
                                 TotalAmount = (decimal)rdr["TotalAmount"],

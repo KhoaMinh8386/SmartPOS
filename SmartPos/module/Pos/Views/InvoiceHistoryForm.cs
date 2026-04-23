@@ -81,7 +81,7 @@ namespace SmartPos.Module.Pos
                 pnlDetail.Visible = true;
                 lblDetailInfo.Text = $"MA HD: {detail.InvoiceCode}\n" +
                                      $"NGAY: {detail.InvoiceDate:dd/MM/yyyy HH:mm}\n" +
-                                     $"KHACH: {detail.CustomerName} ({detail.Phone})\n" +
+                                     $"KHACH: {detail.FullName} ({detail.Phone})\n" +
                                      $"NV: {detail.StaffName}\n" +
                                      $"TONG: {detail.TotalAmount:N0}\n" +
                                      $"TRA: {detail.PaidAmount:N0}\n" +

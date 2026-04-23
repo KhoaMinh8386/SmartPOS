@@ -12,12 +12,12 @@ WHERE p.IsActive = 1
 ORDER BY p.ProductName;";
 
         public const string FindCustomerByPhone = @"
-SELECT CustomerID, CustomerName, Phone, Address, ISNULL(Points, 0) as Points
+SELECT CustomerID, FullName, Phone, Address, ISNULL(TotalPoints, 0) as TotalPoints
 FROM dbo.Customers
-WHERE Phone = @Phone AND IsActive = 1;";
+WHERE (Phone = @Phone OR FullName LIKE '%' + @Phone + '%') AND IsActive = 1;";
 
         public const string InsertCustomer = @"
-INSERT INTO dbo.Customers (CustomerName, Phone, Address, Points, IsActive, CreatedAt)
+INSERT INTO dbo.Customers (FullName, Phone, Address, TotalPoints, IsActive, CreatedAt)
 VALUES (@Name, @Phone, @Address, 0, 1, GETDATE());
 SELECT SCOPE_IDENTITY();";
 
@@ -37,7 +37,8 @@ SELECT SCOPE_IDENTITY();
 IF @CustomerID IS NOT NULL
 BEGIN
     UPDATE dbo.Customers 
-    SET Points = Points - @UsedPoints + @EarnedPoints 
+    SET TotalPoints = ISNULL(TotalPoints, 0) - @UsedPoints + @EarnedPoints,
+        TotalSpent = ISNULL(TotalSpent, 0) + @TotalAmount
     WHERE CustomerID = @CustomerID;
 END;";
 
@@ -48,7 +49,7 @@ VALUES (@InvoiceID, @ProductID, @Quantity, @UnitPrice, @UnitID);";
         public const string GetInvoices = @"
 SELECT 
     i.InvoiceID, i.InvoiceCode, i.InvoiceDate, 
-    ISNULL(c.CustomerName, 'Khach le') as CustomerName,
+    ISNULL(c.FullName, 'Khach le') as FullName,
     u.FullName as StaffName,
     i.TotalAmount,
     CASE i.PaymentMethod WHEN 1 THEN 'Tien mat' WHEN 2 THEN 'Chuyen khoan' ELSE 'Khac' END as PaymentMethodText
@@ -61,7 +62,7 @@ ORDER BY i.InvoiceDate DESC;";
         public const string GetInvoiceDetail = @"
 SELECT 
     i.InvoiceID, i.InvoiceCode, i.InvoiceDate, 
-    ISNULL(c.CustomerName, 'Khach le') as CustomerName,
+    ISNULL(c.FullName, 'Khach le') as FullName,
     c.Phone,
     u.FullName as StaffName,
     i.TotalAmount, i.PaidAmount, i.ChangeAmount, i.PaymentMethod

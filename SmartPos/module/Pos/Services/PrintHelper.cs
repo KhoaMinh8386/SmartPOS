@@ -41,7 +41,7 @@ namespace SmartPos.Module.Pos
             y += 15;
             g.DrawString("Thu ngân: " + invoice.StaffName, fontRegular, Brushes.Black, 10, y);
             y += 15;
-            g.DrawString("Khách hàng: " + (invoice.CustomerName ?? "Khách lẻ"), fontRegular, Brushes.Black, 10, y);
+            g.DrawString("Khách hàng: " + (invoice.FullName ?? "Khách lẻ"), fontRegular, Brushes.Black, 10, y);
             y += 20;
 
             g.DrawString(new string('-', 40), fontRegular, Brushes.Black, 10, y);

@@ -73,7 +73,7 @@ namespace SmartPos.Module.SalesHistory.Views
             
             dgvOrders.Columns.Add("InvoiceCode", "Ma HD");
             dgvOrders.Columns.Add("InvoiceDate", "Ngay lap");
-            dgvOrders.Columns.Add("CustomerName", "Khach hang");
+            dgvOrders.Columns.Add("FullName", "Khach hang");
             dgvOrders.Columns.Add("StaffName", "Thu ngan");
             dgvOrders.Columns.Add("TotalAmount", "Tong tien");
             dgvOrders.Columns.Add("DiscountAmount", "Giam gia");
@@ -108,7 +108,7 @@ namespace SmartPos.Module.SalesHistory.Views
                 int rowIndex = dgvOrders.Rows.Add(
                     item.InvoiceCode,
                     item.InvoiceDate.ToString("dd/MM/yyyy HH:mm"),
-                    item.CustomerName,
+                    item.FullName,
                     item.StaffName,
                     item.TotalAmount.ToString("N0"),
                     item.DiscountAmount.ToString("N0"),

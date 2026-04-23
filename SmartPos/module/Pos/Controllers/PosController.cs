@@ -23,6 +23,11 @@ namespace SmartPos.Module.Pos
             return _backend.FindCustomerByPhone(phone);
         }
 
+        public List<CustomerInfo> FindCustomers(string term)
+        {
+            return _backend.FindCustomers(term);
+        }
+
         public int Checkout(CheckoutRequest request)
         {
             if (request.Items == null || request.Items.Count == 0)

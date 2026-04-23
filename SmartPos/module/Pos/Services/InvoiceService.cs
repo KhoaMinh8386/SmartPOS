@@ -46,7 +46,7 @@ namespace SmartPos.Module.Pos
             {
                 conn.Open();
                 using (SqlCommand cmd = new SqlCommand(@"
-SELECT i.*, u.FullName as StaffName, c.CustomerName, c.Phone
+SELECT i.*, u.FullName as StaffName, c.FullName, c.Phone
 FROM dbo.Invoices i
 LEFT JOIN dbo.Users u ON i.CashierUserID = u.UserID
 LEFT JOIN dbo.Customers c ON i.CustomerID = c.CustomerID
@@ -63,7 +63,7 @@ WHERE i.InvoiceID = @ID", conn))
                                 InvoiceCode = rdr["InvoiceCode"].ToString(),
                                 InvoiceDate = (DateTime)rdr["InvoiceDate"],
                                 StaffName = rdr["StaffName"].ToString(),
-                                CustomerName = rdr["CustomerName"]?.ToString(),
+                                FullName = rdr["FullName"]?.ToString(),
                                 Phone = rdr["Phone"]?.ToString(),
                                 SubTotal = (decimal)rdr["SubTotal"],
                                 TotalAmount = (decimal)rdr["TotalAmount"],

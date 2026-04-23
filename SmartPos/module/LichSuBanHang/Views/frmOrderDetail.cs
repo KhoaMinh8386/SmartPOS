@@ -85,7 +85,7 @@ namespace SmartPos.Module.SalesHistory.Views
 
             var lblInfo = (Label)Controls.Find("lblInfo", true)[0];
             lblInfo.Text = $"MA HD: {_detail.InvoiceCode} | NGAY: {_detail.InvoiceDate:dd/MM/yyyy HH:mm}\n" +
-                           $"KHACH HANG: {_detail.CustomerName} ({_detail.CustomerPhone})\n" +
+                           $"KHACH HANG: {_detail.FullName} ({_detail.CustomerPhone})\n" +
                            $"THU NGAN: {_detail.StaffName}\n" +
                            $"GHI CHU: {_detail.Notes}";
 

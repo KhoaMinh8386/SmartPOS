@@ -5,8 +5,6 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using SmartPos.Module.Pos.Controllers;
-using SmartPos.Module.Pos.Models;
 using SmartPos.Module.SalesHistory.Backend;
 using SmartPos.Module.SalesHistory.Models;
 
@@ -27,6 +25,7 @@ namespace SmartPos.Module.Pos
         private DataGridView dgvCart;
         private TextBox txtSearch;
         private ListBox lstSuggestions;
+        private ListBox lstCustomerSuggestions;
         private TextBox txtPhone;
         private Label lblCustomerInfo;
         private CheckBox chkUsePoints;
@@ -94,7 +93,7 @@ namespace SmartPos.Module.Pos
             };
             left.Controls.Add(lblShiftInfo, 0, 0);
 
-            // Row 1 – Search box (txtSearch Dock=Fill + floating lstSuggestions)
+            // Row 1 – Search box (txtSearch Dock=Fill)
             var pnlSearch = new Panel { Dock = DockStyle.Fill };
             txtSearch = new TextBox
             {
@@ -103,18 +102,23 @@ namespace SmartPos.Module.Pos
             };
             txtSearch.TextChanged += TxtSearch_TextChanged;
             txtSearch.KeyDown += TxtSearch_KeyDown;
+            
+            pnlSearch.Controls.Add(txtSearch);
+            left.Controls.Add(pnlSearch, 0, 1);
+
+            // Floating Suggestions Listbox (Đưa vào panel left nhưng ở lớp trên cùng)
             lstSuggestions = new ListBox
             {
                 Visible = false,
-                Width = 400, Height = 180,
+                Width = 550, Height = 250,
                 Font = new Font("Segoe UI", 11F),
-                Location = new Point(0, 40)
+                Location = new Point(8, 82), // Sát ngay dưới thanh search
+                BorderStyle = BorderStyle.FixedSingle,
+                Cursor = Cursors.Hand
             };
             lstSuggestions.DoubleClick += (s, e) => AddSelectedSuggestion();
-            pnlSearch.Controls.Add(lstSuggestions);
-            pnlSearch.Controls.Add(txtSearch);
+            left.Controls.Add(lstSuggestions); // Add vào left để không bị clipping bởi pnlSearch
             lstSuggestions.BringToFront();
-            left.Controls.Add(pnlSearch, 0, 1);
 
             // Row 2 – Cart DataGridView
             dgvCart = new DataGridView
@@ -186,6 +190,19 @@ namespace SmartPos.Module.Pos
 
             txtPhone = new TextBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 11F) };
             txtPhone.KeyDown += TxtPhone_KeyDown;
+            txtPhone.TextChanged += TxtPhone_TextChanged;
+
+            lstCustomerSuggestions = new ListBox
+            {
+                Visible = false,
+                Width = 250, Height = 150,
+                Font = new Font("Segoe UI", 10F),
+                Location = new Point(10, 60), // Ngay dưới txtPhone
+                BorderStyle = BorderStyle.FixedSingle,
+                Cursor = Cursors.Hand
+            };
+            lstCustomerSuggestions.DoubleClick += (s, e) => SelectCustomerFromList();
+
             lblCustomerInfo = new Label
             {
                 Dock = DockStyle.Fill,
@@ -206,6 +223,8 @@ namespace SmartPos.Module.Pos
             tlpCust.Controls.Add(txtPhone, 0, 0);
             tlpCust.Controls.Add(lblCustomerInfo, 0, 1);
             tlpCust.Controls.Add(chkUsePoints, 0, 2);
+            grpCustomer.Controls.Add(lstCustomerSuggestions); // Add listbox vào groupbox
+            lstCustomerSuggestions.BringToFront();
             grpCustomer.Controls.Add(tlpCust);
             right.Controls.Add(grpCustomer, 0, 0);
 
@@ -487,7 +506,7 @@ namespace SmartPos.Module.Pos
             _usedPoints = 0;
             if (chkUsePoints.Checked && _currentCustomer != null)
             {
-                _usedPoints = _currentCustomer.Points;
+                _usedPoints = _currentCustomer.TotalPoints;
                 _pointsDiscount = _usedPoints; // 1 point = 1d
             }
             lblPointsDiscount.Text = "-" + _pointsDiscount.ToString("N0");
@@ -502,29 +521,69 @@ namespace SmartPos.Module.Pos
 
         private void CalculateChange()
         {
-            decimal total = decimal.Parse(lblTotal.Text.Replace(",", ""));
+            decimal total = decimal.Parse(lblTotal.Text.Replace(",", "").Replace(".", ""));
             decimal change = numPaid.Value - total;
             lblChange.Text = "Tiền thối: " + (change >= 0 ? change.ToString("N0") : "0") + " đ";
         }
 
+        private void TxtPhone_TextChanged(object sender, EventArgs e)
+        {
+            string term = txtPhone.Text.Trim();
+            if (term.Length < 3) { lstCustomerSuggestions.Visible = false; return; }
+
+            var customers = _controller.FindCustomers(term); // Cần thêm method này vào Controller
+            if (customers.Any())
+            {
+                lstCustomerSuggestions.DataSource = customers;
+                lstCustomerSuggestions.DisplayMember = "FullName";
+                lstCustomerSuggestions.Visible = true;
+                lstCustomerSuggestions.BringToFront();
+            }
+            else { lstCustomerSuggestions.Visible = false; }
+        }
+
         private void TxtPhone_KeyDown(object sender, KeyEventArgs e)
         {
+            if (e.KeyCode == Keys.Down && lstCustomerSuggestions.Visible) lstCustomerSuggestions.Focus();
             if (e.KeyCode == Keys.Enter)
             {
-                _currentCustomer = _controller.FindCustomer(txtPhone.Text.Trim());
-                if (_currentCustomer != null)
+                if (lstCustomerSuggestions.Visible && lstCustomerSuggestions.SelectedItem != null)
                 {
-                    lblCustomerInfo.Text = $"{_currentCustomer.CustomerName} - Điểm: {_currentCustomer.Points:N0}";
-                    chkUsePoints.Visible = true;
-                    chkUsePoints.Text = $"Dùng {_currentCustomer.Points:N0} điểm (-{_currentCustomer.Points:N0}đ)";
+                    SelectCustomerFromList();
                 }
                 else
                 {
-                    lblCustomerInfo.Text = "Không tìm thấy";
-                    chkUsePoints.Visible = false;
+                    _currentCustomer = _controller.FindCustomer(txtPhone.Text.Trim());
+                    ApplyCustomer();
                 }
-                UpdateTotal();
             }
+        }
+
+        private void SelectCustomerFromList()
+        {
+            if (lstCustomerSuggestions.SelectedItem is CustomerInfo customer)
+            {
+                _currentCustomer = customer;
+                ApplyCustomer();
+                lstCustomerSuggestions.Visible = false;
+            }
+        }
+
+        private void ApplyCustomer()
+        {
+            if (_currentCustomer != null)
+            {
+                txtPhone.Text = _currentCustomer.Phone;
+                lblCustomerInfo.Text = $"{_currentCustomer.FullName} - Điểm: {_currentCustomer.TotalPoints:N0}";
+                chkUsePoints.Visible = true;
+                chkUsePoints.Text = $"Dùng {_currentCustomer.TotalPoints:N0} điểm (-{_currentCustomer.TotalPoints:N0}đ)";
+            }
+            else
+            {
+                lblCustomerInfo.Text = "Khách lẻ (Chưa có trong DB)";
+                chkUsePoints.Visible = false;
+            }
+            UpdateTotal();
         }
 
         private void TxtVoucher_KeyDown(object sender, KeyEventArgs e)
@@ -564,31 +623,57 @@ namespace SmartPos.Module.Pos
 
         private void ProcessCheckout()
         {
-            if (!_cart.Any()) { MessageBox.Show("Giỏ hàng trống!"); return; }
-            if (numPaid.Value < decimal.Parse(lblTotal.Text.Replace(",", ""))) { MessageBox.Show("Tiền khách đưa chưa đủ!"); return; }
+            if (!_cart.Any()) { MessageBox.Show("Giỏ hàng chưa có sản phẩm!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            
+            // Lấy tổng tiền an toàn hơn
+            decimal totalAmount = _cart.Sum(x => x.SubTotal) - _voucherDiscount - _pointsDiscount;
+            if (totalAmount < 0) totalAmount = 0;
 
-            var request = new CheckoutRequest
-            {
-                CustomerID = _currentCustomer?.CustomerID,
-                UserID = UserSession.CurrentUser?.UserID ?? 1,
-                SubTotal = _cart.Sum(x => x.SubTotal),
-                TotalAmount = decimal.Parse(lblTotal.Text.Replace(",", "")),
-                PaidAmount = numPaid.Value,
-                PaymentMethod = (byte)(cboPaymentMethod.SelectedIndex + 1),
-                VoucherCode = _appliedVoucher?.VoucherCode,
-                VoucherDiscount = _voucherDiscount,
-                PointsDiscount = _pointsDiscount,
-                UsedPoints = _usedPoints,
-                EarnedPoints = (int)(decimal.Parse(lblTotal.Text.Replace(",", "")) * 0.01m), // 1%
-                Items = _cart
-            };
+            if (numPaid.Value < totalAmount) 
+            { 
+                MessageBox.Show("Tiền khách đưa chưa đủ!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning); 
+                numPaid.Focus();
+                return; 
+            }
 
-            int invoiceId = _controller.Checkout(request);
-            if (invoiceId > 0)
+            try
             {
-                MessageBox.Show("Thanh toán thành công!");
-                ShowInvoicePreview(invoiceId);
-                ResetForm();
+                var request = new CheckoutRequest
+                {
+                    CustomerID = _currentCustomer?.CustomerID,
+                    UserID = UserSession.CurrentUser?.UserID ?? 1,
+                    SubTotal = _cart.Sum(x => x.SubTotal),
+                    TotalAmount = totalAmount,
+                    PaidAmount = numPaid.Value,
+                    PaymentMethod = (byte)(cboPaymentMethod.SelectedIndex + 1),
+                    VoucherCode = _appliedVoucher?.VoucherCode,
+                    VoucherDiscount = _voucherDiscount,
+                    PointsDiscount = _pointsDiscount,
+                    UsedPoints = _usedPoints,
+                    EarnedPoints = (int)(totalAmount * 0.01m), // Tích 1% điểm
+                    Items = _cart
+                };
+
+                int invoiceId = _controller.Checkout(request);
+                if (invoiceId > 0)
+                {
+                    var result = MessageBox.Show("Thanh toán thành công!\nBạn có muốn in hóa đơn không?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    
+                    if (result == DialogResult.Yes)
+                    {
+                        ShowInvoicePreview(invoiceId);
+                    }
+                    
+                    ResetForm();
+                }
+                else
+                {
+                    MessageBox.Show("Lỗi hệ thống: Không thể tạo hóa đơn.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Đã xảy ra lỗi khi thanh toán:\n" + ex.Message, "Lỗi hệ thống", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -615,6 +700,8 @@ namespace SmartPos.Module.Pos
             txtSearch.Clear();
             chkUsePoints.Checked = false;
             chkUsePoints.Visible = false;
+            lstCustomerSuggestions.Visible = false;
+            lstSuggestions.Visible = false;
             lblCustomerInfo.Text = "Khách lẻ";
             RefreshCart();
         }
