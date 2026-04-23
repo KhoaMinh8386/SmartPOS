@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using SmartPos.Module.Suppliers.Views;
 
 namespace SmartPos
 {
@@ -9,6 +10,7 @@ namespace SmartPos
         private Label lblWelcome;
         private Label lblUser;
         private Button btnLogout;
+        private Button btnSuppliers;
 
         public MainForm()
         {
@@ -33,6 +35,7 @@ namespace SmartPos
             lblWelcome = new Label();
             lblUser = new Label();
             btnLogout = new Button();
+            btnSuppliers = new Button();
 
             SuspendLayout();
 
@@ -55,9 +58,16 @@ namespace SmartPos
             btnLogout.Location = new Point(30, 120);
             btnLogout.Click += btnLogout_Click;
 
+            btnSuppliers.Text = "Nha cung cap + Cong no";
+            btnSuppliers.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            btnSuppliers.Size = new Size(220, 36);
+            btnSuppliers.Location = new Point(165, 120);
+            btnSuppliers.Click += btnSuppliers_Click;
+
             Controls.Add(lblWelcome);
             Controls.Add(lblUser);
             Controls.Add(btnLogout);
+            Controls.Add(btnSuppliers);
 
             ResumeLayout(false);
             PerformLayout();
@@ -67,6 +77,14 @@ namespace SmartPos
         {
             UserSession.Clear();
             Close();
+        }
+
+        private void btnSuppliers_Click(object sender, EventArgs e)
+        {
+            using (var supplierModule = new SupplierModuleForm())
+            {
+                supplierModule.ShowDialog(this);
+            }
         }
     }
 }
