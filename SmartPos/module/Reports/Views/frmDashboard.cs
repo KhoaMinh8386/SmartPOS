@@ -25,7 +25,7 @@ namespace SmartPos.Module.Reports.Views
 
         private void InitializeUi()
         {
-            Text = "Dashboard Tong quan";
+            Text = "Tổng quan Dashboard";
             Width = 1200;
             Height = 850;
             StartPosition = FormStartPosition.CenterParent;
@@ -41,8 +41,8 @@ namespace SmartPos.Module.Reports.Views
             pnlCharts1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60));
             pnlCharts1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
 
-            chartRevenue = CreateChart("Doanh thu 7 ngay gan nhat", SeriesChartType.Line);
-            chartProducts = CreateChart("Top 5 San pham ban chay (Thang)", SeriesChartType.Bar);
+            chartRevenue = CreateChart("Doanh thu 7 ngày gần nhất", SeriesChartType.Line);
+            chartProducts = CreateChart("Top 5 Sản phẩm bán chạy (Tháng)", SeriesChartType.Bar);
             
             pnlCharts1.Controls.Add(chartRevenue, 0, 0);
             pnlCharts1.Controls.Add(chartProducts, 1, 0);
@@ -53,10 +53,10 @@ namespace SmartPos.Module.Reports.Views
             pnlBottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
             pnlBottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
 
-            chartPayment = CreateChart("Phuong thuc thanh toan", SeriesChartType.Pie);
+            chartPayment = CreateChart("Phương thức thanh toán", SeriesChartType.Pie);
             
-            dgvRecentInvoices = CreateGrid("10 Hoa don gan nhat");
-            dgvLowStock = CreateGrid("Canh bao ton kho thap");
+            dgvRecentInvoices = CreateGrid("10 Hóa đơn gần nhất");
+            dgvLowStock = CreateGrid("Cảnh báo tồn kho thấp");
 
             pnlBottom.Controls.Add(chartPayment, 0, 0);
             pnlBottom.Controls.Add(dgvRecentInvoices, 1, 0);
@@ -110,11 +110,12 @@ namespace SmartPos.Module.Reports.Views
         private void LoadData()
         {
             var kpis = _controller.GetDashboardKpis();
-            AddKpiCard("DOANH THU HOM NAY", kpis.TodayRevenue.ToString("N0"), Color.FromArgb(25, 118, 210));
-            AddKpiCard("DOANH THU THANG", kpis.MonthRevenue.ToString("N0"), Color.FromArgb(56, 142, 60));
-            AddKpiCard("DON HANG HOM NAY", kpis.TodayOrders.ToString(), Color.FromArgb(255, 160, 0));
-            AddKpiCard("LOI NHUAN HOM NAY", kpis.TodayProfit.ToString("N0"), Color.FromArgb(211, 47, 47));
-            AddKpiCard("SAP HET HANG", kpis.LowStockCount.ToString(), Color.FromArgb(123, 31, 162));
+            pnlKpis.Controls.Clear();
+            AddKpiCard("DOANH THU HÔM NAY", kpis.TodayRevenue.ToString("N0"), Color.FromArgb(25, 118, 210));
+            AddKpiCard("DOANH THU THÁNG", kpis.MonthRevenue.ToString("N0"), Color.FromArgb(56, 142, 60));
+            AddKpiCard("ĐƠN HÀNG HÔM NAY", kpis.TodayOrders.ToString(), Color.FromArgb(255, 160, 0));
+            AddKpiCard("LỢI NHUẬN HÔM NAY", kpis.TodayProfit.ToString("N0"), Color.FromArgb(211, 47, 47));
+            AddKpiCard("SẮP HẾT HÀNG", kpis.LowStockCount.ToString(), Color.FromArgb(123, 31, 162));
 
             // Revenue Chart
             var revData = _controller.GetRevenueChart(7);
@@ -133,6 +134,26 @@ namespace SmartPos.Module.Reports.Views
 
             dgvRecentInvoices.DataSource = _controller.GetRecentInvoices();
             dgvLowStock.DataSource = _controller.GetLowStockAlert();
+            FormatGrids();
+        }
+
+        private void FormatGrids()
+        {
+            // Recent Invoices
+            if (dgvRecentInvoices.Columns["InvoiceNo"] != null) dgvRecentInvoices.Columns["InvoiceNo"].HeaderText = "Số HD";
+            if (dgvRecentInvoices.Columns["CustomerName"] != null) dgvRecentInvoices.Columns["CustomerName"].HeaderText = "Khách hàng";
+            if (dgvRecentInvoices.Columns["TotalAmount"] != null) dgvRecentInvoices.Columns["TotalAmount"].HeaderText = "Tổng tiền";
+            if (dgvRecentInvoices.Columns["TimeAgo"] != null) dgvRecentInvoices.Columns["TimeAgo"].HeaderText = "Thời gian";
+
+            if (dgvRecentInvoices.Columns["TotalAmount"] != null) dgvRecentInvoices.Columns["TotalAmount"].DefaultCellStyle.Format = "N0";
+
+            // Low Stock
+            if (dgvLowStock.Columns["ProductID"] != null) dgvLowStock.Columns["ProductID"].HeaderText = "Mã SP";
+            if (dgvLowStock.Columns["ProductName"] != null) dgvLowStock.Columns["ProductName"].HeaderText = "Sản phẩm";
+            if (dgvLowStock.Columns["CurrentStock"] != null) dgvLowStock.Columns["CurrentStock"].HeaderText = "Tồn";
+            if (dgvLowStock.Columns["MinStockAlert"] != null) dgvLowStock.Columns["MinStockAlert"].HeaderText = "Mức báo";
+            
+            if (dgvLowStock.Columns["CurrentStock"] != null) dgvLowStock.Columns["CurrentStock"].DefaultCellStyle.Format = "N1";
         }
 
         private void AddKpiCard(string title, string value, Color color)

@@ -10,9 +10,15 @@ SELECT
     c.CategoryName, 
     p.RetailPrice, 
     p.Location, 
-    p.IsActive
+    p.IsActive,
+    ISNULL(inv.TotalQty, 0) as StockQuantity
 FROM dbo.Products p
 INNER JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
+LEFT JOIN (
+    SELECT ProductID, SUM(Quantity) as TotalQty 
+    FROM dbo.Inventory 
+    GROUP BY ProductID
+) inv ON p.ProductID = inv.ProductID
 WHERE (@Search IS NULL OR p.ProductName LIKE @Search OR p.ProductCode LIKE @Search OR p.Barcode LIKE @Search)
   AND (@CategoryID = 0 OR p.CategoryID = @CategoryID)
 ORDER BY p.ProductName;";

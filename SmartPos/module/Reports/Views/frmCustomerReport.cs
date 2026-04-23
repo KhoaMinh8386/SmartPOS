@@ -22,7 +22,7 @@ namespace SmartPos.Module.Reports.Views
 
         private void InitializeUi()
         {
-            Text = "Bao cao Khach hang";
+            Text = "Báo cáo Khách hàng";
             Width = 900;
             Height = 650;
             StartPosition = FormStartPosition.CenterParent;
@@ -52,6 +52,7 @@ namespace SmartPos.Module.Reports.Views
         {
             var data = _controller.GetCustomerReport();
             dgvCustomers.DataSource = data;
+            FormatGrid();
 
             chartRank.Series[0].Points.Clear();
             var ranks = data.GroupBy(x => x.Rank)
@@ -61,6 +62,19 @@ namespace SmartPos.Module.Reports.Views
             {
                 chartRank.Series[0].Points.AddXY(r.Rank, r.Count);
             }
+        }
+
+        private void FormatGrid()
+        {
+            if (dgvCustomers.Columns["CustomerID"] != null) dgvCustomers.Columns["CustomerID"].HeaderText = "ID";
+            if (dgvCustomers.Columns["FullName"] != null) dgvCustomers.Columns["FullName"].HeaderText = "Họ tên";
+            if (dgvCustomers.Columns["PhoneNumber"] != null) dgvCustomers.Columns["PhoneNumber"].HeaderText = "Số điện thoại";
+            if (dgvCustomers.Columns["OrderCount"] != null) dgvCustomers.Columns["OrderCount"].HeaderText = "Số đơn";
+            if (dgvCustomers.Columns["TotalSpent"] != null) dgvCustomers.Columns["TotalSpent"].HeaderText = "Tổng mua";
+            if (dgvCustomers.Columns["Points"] != null) dgvCustomers.Columns["Points"].HeaderText = "Điểm";
+            if (dgvCustomers.Columns["Rank"] != null) dgvCustomers.Columns["Rank"].HeaderText = "Hạng";
+
+            if (dgvCustomers.Columns["TotalSpent"] != null) dgvCustomers.Columns["TotalSpent"].DefaultCellStyle.Format = "N0";
         }
     }
 }
