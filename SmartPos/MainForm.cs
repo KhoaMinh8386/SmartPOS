@@ -8,6 +8,8 @@ using SmartPos.Module.Promotions.Views;
 using SmartPos.Module.InventoryAudit.Views;
 using SmartPos.Module.PurchaseOrders.Views;
 using SmartPos.Module.Suppliers.Views;
+using SmartPos.Module.Reports.Views;
+
 
 namespace SmartPos
 {
@@ -52,8 +54,13 @@ namespace SmartPos
             AddMenuButton("📥 Nhập hàng", "PurchaseOrders", UserSession.IsManager);
             AddMenuButton("🔍 Kiểm kê kho", "Inventory", UserSession.IsManager);
             AddMenuButton("🎫 Khuyến mãi", "Promotions", UserSession.IsManager);
-            AddMenuButton("📊 Báo cáo lợi nhuận", "Reports", UserSession.IsAdmin);
+            AddMenuButton("📊 Báo cáo lợi nhuận", "ProfitReport", UserSession.IsAdmin);
+            AddMenuButton("👥 Báo cáo khách hàng", "CustomerReport", UserSession.IsAdmin);
+            AddMenuButton("📦 Báo cáo sản phẩm", "ProductReport", UserSession.IsAdmin);
+            AddMenuButton("💰 Báo cáo doanh thu", "RevenueReport", UserSession.IsAdmin);
+            AddMenuButton("📊 Thống kê & Báo cáo", "Reports", UserSession.IsAdmin);
             AddMenuButton("👥 Quản lý nhân viên", "Users", UserSession.IsAdmin);
+
 
             // 2. Header
             panelHeader = new Panel
@@ -177,6 +184,26 @@ namespace SmartPos
                 case "saleshistory":
                     moduleControl = new frmOrderManagement { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
                     break;
+                case "dashboard":
+                    moduleControl = new frmDashboard { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
+                    break;
+                case "revenuereport":
+                    moduleControl = new frmRevenueReport { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
+                    break;
+                case "productreport":
+                    moduleControl = new frmProductReport { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
+                    break;
+                case "customerreport":
+                    moduleControl = new frmCustomerReport { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
+                    break;
+                case "profitreport":
+                    moduleControl = new frmProfitReport { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
+                    break;
+                case "reports":
+                    // Redirect to dashboard as general entry for reports
+                    moduleControl = new frmDashboard { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
+                    break;
+
                 default:
                     moduleControl = CreatePlaceholder(moduleName);
                     break;
