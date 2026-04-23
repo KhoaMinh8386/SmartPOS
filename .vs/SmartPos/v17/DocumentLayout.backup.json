@@ -7,7 +7,7 @@
       "RelativeMoniker": "D:0:0:{69AB7874-1A97-4CB3-BCF3-B8C5EF13E6EB}|SmartPos\\SmartPos.csproj|solutionrelative:smartpos\\module\\pos\\views\\invoicehistoryform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{69AB7874-1A97-4CB3-BCF3-B8C5EF13E6EB}|SmartPos\\SmartPos.csproj|c:\\new folder (6)\\smartpos\\smartpos\\module\\products\\views\\productmoduleform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{69AB7874-1A97-4CB3-BCF3-B8C5EF13E6EB}|SmartPos\\SmartPos.csproj|C:\\New folder (6)\\SmartPOS\\smartpos\\module\\products\\views\\productmoduleform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{69AB7874-1A97-4CB3-BCF3-B8C5EF13E6EB}|SmartPos\\SmartPos.csproj|solutionrelative:smartpos\\module\\products\\views\\productmoduleform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
@@ -51,8 +51,7 @@
               "RelativeToolTip": "SmartPOS\\module\\Products\\Views\\ProductModuleForm.cs",
               "ViewState": "AgIAAA8AAAAAAAAAAAAnwCYAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T09:56:02.481Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-23T09:56:02.481Z"
             },
             {
               "$type": "Document",
