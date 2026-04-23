@@ -1,4 +1,4 @@
-namespace SmartPos.Module.Pos.Templates
+namespace SmartPos.Module.Pos
 {
     internal static class PosSqlTemplate
     {
@@ -23,13 +23,23 @@ SELECT SCOPE_IDENTITY();";
 
         public const string InsertInvoice = @"
 INSERT INTO dbo.Invoices (
-    InvoiceCode, CustomerID, CashierUserID, WarehouseID, SubTotal, TotalAmount, DiscountAmount, 
-    PaidAmount, PaymentMethod, Status, Notes, VoucherCode, VoucherDiscount, InvoiceDate
+    InvoiceCode, CustomerID, CashierUserID, WarehouseID, SubTotal, TotalAmount, 
+    DiscountAmount, VoucherDiscount, PointsDiscount, UsedPoints, EarnedPoints,
+    PaidAmount, PaymentMethod, Status, Notes, VoucherCode, InvoiceDate
 ) VALUES (
-    @InvoiceCode, @CustomerID, @UserID, @WarehouseID, @SubTotal, @TotalAmount, @VoucherDiscount, 
-    @PaidAmount, @PaymentMethod, 1, @Note, @VoucherCode, @VoucherDiscount, GETDATE()
+    @InvoiceCode, @CustomerID, @UserID, @WarehouseID, @SubTotal, @TotalAmount, 
+    @VoucherDiscount + @PointsDiscount, @VoucherDiscount, @PointsDiscount, @UsedPoints, @EarnedPoints,
+    @PaidAmount, @PaymentMethod, 1, @Note, @VoucherCode, GETDATE()
 );
-SELECT SCOPE_IDENTITY();";
+SELECT SCOPE_IDENTITY();
+
+-- Cập nhật điểm tích lũy cho khách hàng
+IF @CustomerID IS NOT NULL
+BEGIN
+    UPDATE dbo.Customers 
+    SET Points = Points - @UsedPoints + @EarnedPoints 
+    WHERE CustomerID = @CustomerID;
+END;";
 
         public const string InsertInvoiceItem = @"
 INSERT INTO dbo.InvoiceItems (InvoiceID, ProductID, Quantity, UnitPrice, UnitID)
@@ -70,6 +80,9 @@ INNER JOIN dbo.Products p ON ii.ProductID = p.ProductID
 LEFT JOIN dbo.Units u ON p.BaseUnitID = u.UnitID
 WHERE ii.InvoiceID = @InvoiceID;";
 
-        public const string GetNextInvoiceCode = @"SELECT ISNULL(MAX(InvoiceID), 0) + 1 FROM dbo.Invoices;";
+        public const string GetNextInvoiceCode = @"
+SELECT ISNULL(MAX(CAST(SUBSTRING(InvoiceCode, 9, 4) AS INT)), 0) + 1 
+FROM dbo.Invoices 
+WHERE InvoiceCode LIKE 'HD' + FORMAT(GETDATE(), 'yyMMdd') + '%';";
     }
 }

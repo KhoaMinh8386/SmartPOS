@@ -2,10 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using SmartPos.Module.Pos.Controllers;
-using SmartPos.Module.Pos.Models;
-
-namespace SmartPos.Module.Pos.Views
+namespace SmartPos.Module.Pos
 {
     public class InvoiceHistoryForm : Form
     {

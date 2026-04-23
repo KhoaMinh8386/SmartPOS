@@ -4,10 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using SmartPos.Module.Pos.Models;
-using SmartPos.Module.Pos.Templates;
-
-namespace SmartPos.Module.Pos.Backend
+namespace SmartPos.Module.Pos
 {
     public class PosBackend
     {
@@ -103,7 +100,7 @@ ORDER BY p.ProductName;", conn))
             }
         }
 
-        public string Checkout(CheckoutRequest request)
+        public int Checkout(CheckoutRequest request)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
@@ -128,9 +125,12 @@ ORDER BY p.ProductName;", conn))
                             cmdInv.Parameters.AddWithValue("@CustomerID", (object)request.CustomerID ?? DBNull.Value);
                             cmdInv.Parameters.AddWithValue("@UserID", request.UserID);
                             cmdInv.Parameters.AddWithValue("@WarehouseID", 1); // Default to main warehouse
-                            cmdInv.Parameters.AddWithValue("@SubTotal", request.Items.Sum(x => x.SubTotal));
+                            cmdInv.Parameters.AddWithValue("@SubTotal", request.SubTotal);
                             cmdInv.Parameters.AddWithValue("@TotalAmount", request.TotalAmount);
                             cmdInv.Parameters.AddWithValue("@VoucherDiscount", request.VoucherDiscount);
+                            cmdInv.Parameters.AddWithValue("@PointsDiscount", request.PointsDiscount);
+                            cmdInv.Parameters.AddWithValue("@UsedPoints", request.UsedPoints);
+                            cmdInv.Parameters.AddWithValue("@EarnedPoints", request.EarnedPoints);
                             cmdInv.Parameters.AddWithValue("@VoucherCode", request.VoucherCode ?? (object)DBNull.Value);
                             cmdInv.Parameters.AddWithValue("@PaidAmount", request.PaidAmount);
                             cmdInv.Parameters.AddWithValue("@PaymentMethod", request.PaymentMethod);
@@ -153,7 +153,7 @@ ORDER BY p.ProductName;", conn))
                         }
 
                         trans.Commit();
-                        return invoiceCode;
+                        return invoiceId;
                     }
                     catch
                     {

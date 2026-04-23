@@ -96,6 +96,23 @@
     <Compile Include="module\Pos\Views\InvoiceHistoryForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="module\Pos\Services\InvoiceService.cs" />
+    <Compile Include="module\Pos\Services\PrintHelper.cs" />
+    <Compile Include="module\Pos\Views\InvoicePreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+
+    <!-- Module: Customers -->
+    <Compile Include="module\Customers\Models\CustomerModels.cs" />
+    <Compile Include="module\Customers\Templates\CustomerSqlTemplate.cs" />
+    <Compile Include="module\Customers\Backend\CustomerBackend.cs" />
+    <Compile Include="module\Customers\Controllers\CustomerController.cs" />
+    <Compile Include="module\Customers\Views\CustomerModuleForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="module\Customers\Views\CustomerEditForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     
     <!-- Module: PurchaseOrders -->
     <Compile Include="module\PurchaseOrders\Views\PurchaseOrderModuleForm.cs">

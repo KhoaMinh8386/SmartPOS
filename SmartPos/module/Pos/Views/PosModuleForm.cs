@@ -1,261 +1,493 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using SmartPos.Module.Pos.Controllers;
-using SmartPos.Module.Pos.Models;
-
-namespace SmartPos.Module.Pos.Views
+namespace SmartPos.Module.Pos
 {
-    public class PosModuleForm : Form
+    public partial class PosModuleForm : Form
     {
         private readonly PosController _controller;
+        private readonly InvoiceService _invoiceService;
         private List<CartItem> _cart = new List<CartItem>();
         private CustomerInfo _currentCustomer = null;
+        private VoucherInfo _appliedVoucher = null;
+        private decimal _voucherDiscount = 0;
+        private decimal _pointsDiscount = 0;
+        private int _usedPoints = 0;
 
+        // UI Components
         private DataGridView dgvCart;
         private TextBox txtSearch;
-        private ListBox lstSearchResults;
+        private ListBox lstSuggestions;
+        private TextBox txtPhone;
+        private Label lblCustomerInfo;
+        private CheckBox chkUsePoints;
+        private Label lblSubTotal;
+        private Label lblVoucherDiscount;
+        private Label lblPointsDiscount;
         private Label lblTotal;
-        private TextBox txtCustomerPhone;
-        private Label lblCustomerName;
         private NumericUpDown numPaid;
         private Label lblChange;
         private ComboBox cboPaymentMethod;
         private TextBox txtVoucher;
-        private Label lblVoucherDiscount;
-        private decimal _voucherDiscountAmount = 0;
-        private VoucherInfo _appliedVoucher = null;
-        private Button btnCheckout;
+        private Label lblShiftInfo;
 
         public PosModuleForm()
         {
             _controller = new PosController();
-            InitializeUi();
+            _invoiceService = new InvoiceService();
+            InitializeComponent();
+            SetupShortcuts();
+            this.Load += (s, e) => { txtSearch.Focus(); UpdateShiftInfo(); };
         }
 
-        private void InitializeUi()
+        private void InitializeComponent()
         {
-            Text = "POS - Ban hang";
-            Width = 1200;
-            Height = 800;
-            StartPosition = FormStartPosition.CenterScreen;
-            BackColor = Color.FromArgb(240, 242, 245);
+            this.Text = "SMART POS - BÁN HÀNG";
+            this.BackColor = Color.FromArgb(245, 245, 245);
+            this.Font = new Font("Segoe UI", 10F);
 
-            var mainSplit = new SplitContainer
+            // ─── ROOT: 2 columns 65/35 ───────────────────────────────────────────
+            var root = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                SplitterDistance = 800,
-                FixedPanel = FixedPanel.Panel2
+                ColumnCount = 2,
+                RowCount = 1,
+                Padding = new Padding(0)
             };
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F));
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
-            // Left: Cart & Product Search
-            var leftPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(15) };
-            
-            var searchPanel = new Panel { Dock = DockStyle.Top, Height = 100 };
-            var lblSearch = new Label { Text = "Tim san pham (Ten/SKU/Barcode)", Location = new Point(0, 10), AutoSize = true, Font = new Font("Segoe UI", 10F, FontStyle.Bold) };
-            txtSearch = new TextBox { Location = new Point(0, 35), Width = 600, Font = new Font("Segoe UI", 14F) };
+            // ════════════════════════════════════════════════════════════════════
+            // LEFT: 3 rows — shiftInfo | search | cart | actions
+            // ════════════════════════════════════════════════════════════════════
+            var left = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 4,
+                Padding = new Padding(8),
+                BackColor = Color.FromArgb(245, 245, 245)
+            };
+            left.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));   // shift info
+            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));   // search
+            left.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // cart grid
+            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));   // actions
+
+            // Row 0 – Shift info
+            lblShiftInfo = new Label
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(64, 64, 64),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            left.Controls.Add(lblShiftInfo, 0, 0);
+
+            // Row 1 – Search box (txtSearch Dock=Fill + floating lstSuggestions)
+            var pnlSearch = new Panel { Dock = DockStyle.Fill };
+            txtSearch = new TextBox
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 13F)
+            };
             txtSearch.TextChanged += TxtSearch_TextChanged;
             txtSearch.KeyDown += TxtSearch_KeyDown;
+            lstSuggestions = new ListBox
+            {
+                Visible = false,
+                Width = 400, Height = 180,
+                Font = new Font("Segoe UI", 11F),
+                Location = new Point(0, 40)
+            };
+            lstSuggestions.DoubleClick += (s, e) => AddSelectedSuggestion();
+            pnlSearch.Controls.Add(lstSuggestions);
+            pnlSearch.Controls.Add(txtSearch);
+            lstSuggestions.BringToFront();
+            left.Controls.Add(pnlSearch, 0, 1);
 
-            lstSearchResults = new ListBox { Location = new Point(0, 70), Width = 600, Height = 200, Visible = false, Font = new Font("Segoe UI", 10F) };
-            lstSearchResults.DoubleClick += LstSearchResults_DoubleClick;
-            lstSearchResults.KeyDown += LstSearchResults_KeyDown;
-
-            searchPanel.Controls.AddRange(new Control[] { lblSearch, txtSearch, lstSearchResults });
-
+            // Row 2 – Cart DataGridView
             dgvCart = new DataGridView
             {
                 Dock = DockStyle.Fill,
                 BackgroundColor = Color.White,
-                AllowUserToAddRows = false,
-                RowTemplate = { Height = 40 },
-                Font = new Font("Segoe UI", 10F),
+                BorderStyle = BorderStyle.None,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+                RowTemplate = { Height = 36 },
+                AllowUserToAddRows = false,
+                GridColor = Color.FromArgb(220, 220, 220),
+                Font = new Font("Segoe UI", 10F)
             };
-            dgvCart.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ten san pham", DataPropertyName = "ProductName", ReadOnly = true });
-            dgvCart.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Don gia", DataPropertyName = "UnitPrice", ReadOnly = true, DefaultCellStyle = { Format = "N0" } });
-            dgvCart.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "So luong", DataPropertyName = "Quantity" });
-            dgvCart.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Don vi", DataPropertyName = "UnitName", ReadOnly = true });
-            dgvCart.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Thanh tien", DataPropertyName = "SubTotal", ReadOnly = true, DefaultCellStyle = { Format = "N0" } });
-            dgvCart.CellValueChanged += DgvCart_CellValueChanged;
-            dgvCart.UserDeletingRow += DgvCart_UserDeletingRow;
+            SetupCartGrid();
+            left.Controls.Add(dgvCart, 0, 2);
 
-            leftPanel.Controls.Add(dgvCart);
-            leftPanel.Controls.Add(searchPanel);
+            // Row 3 – Actions
+            var pnlActions = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 6, 0, 6) };
+            var btnClear = new Button
+            {
+                Text = "🗑Xóa tất cả",
+                Height = 38, Width = 160,
+                BackColor = Color.FromArgb(198, 40, 40),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold)
+            };
+            btnClear.FlatAppearance.BorderSize = 0;
+            btnClear.Click += (s, e) => { _cart.Clear(); RefreshCart(); };
+            pnlActions.Controls.Add(btnClear);
+            left.Controls.Add(pnlActions, 0, 3);
 
-            // Right: Checkout & Customer
-            var rightPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20), BackColor = Color.White };
-            
-            var lblSectionCustomer = new Label { Text = "KHACH HANG", Font = new Font("Segoe UI", 12F, FontStyle.Bold), Dock = DockStyle.Top, Height = 30 };
-            txtCustomerPhone = new TextBox { Dock = DockStyle.Top, Font = new Font("Segoe UI", 12F), Height = 35 };
-            // PlaceholderText not supported in .NET Framework 4.6.1
-            txtCustomerPhone.KeyDown += TxtCustomerPhone_KeyDown;
-            
-            lblCustomerName = new Label { Text = "Khach le", Font = new Font("Segoe UI", 10F, FontStyle.Italic), Dock = DockStyle.Top, Height = 40, ForeColor = Color.DimGray, TextAlign = ContentAlignment.MiddleLeft };
+            // ════════════════════════════════════════════════════════════════════
+            // RIGHT: 4 rows — customer | summary | payment | checkout
+            // ════════════════════════════════════════════════════════════════════
+            var right = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 4,
+                Padding = new Padding(10, 8, 8, 8),
+                BackColor = Color.White
+            };
+            right.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 110)); // customer
+            right.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // summary
+            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 130)); // payment input
+            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 64));  // checkout btn
 
-            var pnlCheckout = new Panel { Dock = DockStyle.Bottom, Height = 400 };
-            
-            lblTotal = new Label { Text = "0", Font = new Font("Segoe UI", 32F, FontStyle.Bold), ForeColor = Color.FromArgb(211, 47, 47), Dock = DockStyle.Top, Height = 80, TextAlign = ContentAlignment.MiddleRight };
-            var lblTotalText = new Label { Text = "TONG CONG", Font = new Font("Segoe UI", 10F), Dock = DockStyle.Top, Height = 25, TextAlign = ContentAlignment.MiddleRight };
+            // ── Row 0: Customer ──────────────────────────────────────────────────
+            var grpCustomer = new GroupBox
+            {
+                Text = "KHÁCH HÀNG",
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Padding = new Padding(6, 16, 6, 4)
+            };
+            var tlpCust = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 3,
+                Padding = new Padding(0)
+            };
+            tlpCust.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpCust.RowStyles.Add(new RowStyle(SizeType.Absolute, 28)); // txtPhone
+            tlpCust.RowStyles.Add(new RowStyle(SizeType.Absolute, 22)); // lblCustomerInfo
+            tlpCust.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // chkUsePoints
 
-            var lblPayMethod = new Label { Text = "Phuong thuc", Location = new Point(0, 120), AutoSize = true };
-            cboPaymentMethod = new ComboBox { Location = new Point(0, 145), Width = 340, Font = new Font("Segoe UI", 12F), DropDownStyle = ComboBoxStyle.DropDownList };
-            cboPaymentMethod.Items.Add("Tien mat");
-            cboPaymentMethod.Items.Add("Chuyen khoan");
-            cboPaymentMethod.SelectedIndex = 0;
+            txtPhone = new TextBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 11F) };
+            txtPhone.KeyDown += TxtPhone_KeyDown;
+            lblCustomerInfo = new Label
+            {
+                Dock = DockStyle.Fill,
+                Text = "Khách lẻ",
+                ForeColor = Color.FromArgb(33, 150, 243),
+                Font = new Font("Segoe UI", 9F, FontStyle.Italic),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            chkUsePoints = new CheckBox
+            {
+                Dock = DockStyle.Fill,
+                Text = "Dùng điểm tích lũy",
+                Visible = false,
+                Font = new Font("Segoe UI", 9F)
+            };
+            chkUsePoints.CheckedChanged += (s, e) => UpdateTotal();
 
-            var lblPaid = new Label { Text = "Khach dua", Location = new Point(0, 190), AutoSize = true };
-            numPaid = new NumericUpDown { Location = new Point(0, 215), Width = 340, Font = new Font("Segoe UI", 18F, FontStyle.Bold), Maximum = 1000000000, ThousandsSeparator = true };
-            numPaid.ValueChanged += (s, e) => CalculateChange();
+            tlpCust.Controls.Add(txtPhone, 0, 0);
+            tlpCust.Controls.Add(lblCustomerInfo, 0, 1);
+            tlpCust.Controls.Add(chkUsePoints, 0, 2);
+            grpCustomer.Controls.Add(tlpCust);
+            right.Controls.Add(grpCustomer, 0, 0);
 
-            var lblVoucher = new Label { Text = "Ma Voucher", Location = new Point(0, 260), AutoSize = true };
-            txtVoucher = new TextBox { Location = new Point(0, 285), Width = 340, Font = new Font("Segoe UI", 12F) };
+            // ── Row 1: Summary (subtotal, voucher, points, total) ────────────────
+            var tlpSummary = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 5,
+                Padding = new Padding(4, 6, 4, 0)
+            };
+            tlpSummary.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55F));
+            tlpSummary.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
+            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 16F)); // subtotal
+            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 16F)); // voucher label
+            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 20F)); // voucher input
+            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 16F)); // points
+            tlpSummary.RowStyles.Add(new RowStyle(SizeType.Percent, 32F)); // TOTAL
+
+            // Row 0: Subtotal
+            tlpSummary.Controls.Add(MakeLabel("Tạm tính:"), 0, 0);
+            lblSubTotal = MakeValueLabel("0");
+            tlpSummary.Controls.Add(lblSubTotal, 1, 0);
+
+            // Row 1: Voucher label
+            tlpSummary.Controls.Add(MakeLabel("Mã Voucher:"), 0, 1);
+            lblVoucherDiscount = MakeValueLabel("-0", Color.FromArgb(198, 40, 40));
+            tlpSummary.Controls.Add(lblVoucherDiscount, 1, 1);
+
+            // Row 2: Voucher input
+            txtVoucher = new TextBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 11F) };
             txtVoucher.KeyDown += TxtVoucher_KeyDown;
+            var lblVoucherHint = new Label
+            {
+                Dock = DockStyle.Fill,
+                Text = "↵ Enter để áp dụng",
+                ForeColor = Color.Gray,
+                Font = new Font("Segoe UI", 8F, FontStyle.Italic),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            tlpSummary.Controls.Add(txtVoucher, 0, 2);
+            tlpSummary.Controls.Add(lblVoucherHint, 1, 2);
 
-            lblVoucherDiscount = new Label { Text = "Giam gia Voucher: 0", Location = new Point(0, 320), AutoSize = true, ForeColor = Color.Blue, Font = new Font("Segoe UI", 10, FontStyle.Bold) };
+            // Row 3: Points
+            tlpSummary.Controls.Add(MakeLabel("Giảm điểm:"), 0, 3);
+            lblPointsDiscount = MakeValueLabel("-0", Color.FromArgb(198, 40, 40));
+            tlpSummary.Controls.Add(lblPointsDiscount, 1, 3);
 
-            var lblChangeText = new Label { Text = "Tien thoi", Location = new Point(0, 360), AutoSize = true };
-            lblChange = new Label { Text = "0", Location = new Point(100, 355), Size = new Size(240, 40), Font = new Font("Segoe UI", 18F, FontStyle.Bold), ForeColor = Color.FromArgb(46, 125, 50), TextAlign = ContentAlignment.MiddleRight };
+            // Row 4: TOTAL (span 2 cols via separate panel)
+            var pnlTotal = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(237, 247, 237) };
+            var lblTotalTitle = new Label
+            {
+                Text = "TỔNG CỘNG",
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(33, 33, 33),
+                AutoSize = false,
+                Dock = DockStyle.Left,
+                Width = 110,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(6, 0, 0, 0)
+            };
+            lblTotal = new Label
+            {
+                Text = "0",
+                Font = new Font("Segoe UI", 22F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(198, 40, 40),
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleRight,
+                Padding = new Padding(0, 0, 8, 0)
+            };
+            pnlTotal.Controls.Add(lblTotal);
+            pnlTotal.Controls.Add(lblTotalTitle);
+            tlpSummary.SetColumnSpan(pnlTotal, 2);
+            tlpSummary.Controls.Add(pnlTotal, 0, 4);
 
-            btnCheckout = new Button { Text = "THANH TOAN (F9)", Dock = DockStyle.Bottom, Height = 80, BackColor = Color.FromArgb(25, 118, 210), ForeColor = Color.White, Font = new Font("Segoe UI", 16F, FontStyle.Bold), FlatStyle = FlatStyle.Flat };
-            btnCheckout.Click += BtnCheckout_Click;
+            right.Controls.Add(tlpSummary, 0, 1);
 
-            pnlCheckout.Controls.AddRange(new Control[] { lblTotal, lblTotalText, lblPayMethod, cboPaymentMethod, lblPaid, lblChangeText, lblChange, lblVoucher, txtVoucher, lblVoucherDiscount, btnCheckout });
+            // ── Row 2: Payment method + Paid amount ─────────────────────────────
+            var tlpPay = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 4,
+                Padding = new Padding(4, 4, 4, 0)
+            };
+            tlpPay.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpPay.RowStyles.Add(new RowStyle(SizeType.Absolute, 20)); // label
+            tlpPay.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // combo
+            tlpPay.RowStyles.Add(new RowStyle(SizeType.Absolute, 20)); // label
+            tlpPay.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // numPaid + change
 
-            rightPanel.Controls.Add(lblCustomerName);
-            rightPanel.Controls.Add(txtCustomerPhone);
-            rightPanel.Controls.Add(lblSectionCustomer);
-            rightPanel.Controls.Add(pnlCheckout);
+            tlpPay.Controls.Add(MakeLabel("Phương thức thanh toán:"), 0, 0);
+            cboPaymentMethod = new ComboBox
+            {
+                Dock = DockStyle.Fill,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font("Segoe UI", 10F)
+            };
+            cboPaymentMethod.Items.AddRange(new[] { "Tiền mặt", "Chuyển khoản" });
+            cboPaymentMethod.SelectedIndex = 0;
+            tlpPay.Controls.Add(cboPaymentMethod, 0, 1);
 
-            mainSplit.Panel1.Controls.Add(leftPanel);
-            mainSplit.Panel2.Controls.Add(rightPanel);
-            Controls.Add(mainSplit);
+            tlpPay.Controls.Add(MakeLabel("Tiền khách đưa:"), 0, 2);
 
-            this.KeyPreview = true;
-            this.KeyDown += PosModuleForm_KeyDown;
+            var pnlPaid = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                Padding = new Padding(0)
+            };
+            pnlPaid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60F));
+            pnlPaid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
+            pnlPaid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            numPaid = new NumericUpDown
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+                Maximum = 1_000_000_000,
+                ThousandsSeparator = true,
+                TextAlign = HorizontalAlignment.Right
+            };
+            numPaid.ValueChanged += (s, e) => CalculateChange();
+            lblChange = new Label
+            {
+                Dock = DockStyle.Fill,
+                Text = "Thối: 0đ",
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(27, 94, 32),
+                TextAlign = ContentAlignment.MiddleRight,
+                Padding = new Padding(0, 0, 4, 0)
+            };
+            pnlPaid.Controls.Add(numPaid, 0, 0);
+            pnlPaid.Controls.Add(lblChange, 1, 0);
+            tlpPay.Controls.Add(pnlPaid, 0, 3);
+
+            right.Controls.Add(tlpPay, 0, 2);
+
+            // ── Row 3: CHECKOUT button ───────────────────────────────────────────
+            var btnCheckout = new Button
+            {
+                Text = "THANH TOÁN",
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(27, 94, 32),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
+            };
+            btnCheckout.FlatAppearance.BorderSize = 0;
+            btnCheckout.Click += (s, e) => ProcessCheckout();
+            right.Controls.Add(btnCheckout, 0, 3);
+
+            // ── Assemble root ────────────────────────────────────────────────────
+            root.Controls.Add(left, 0, 0);
+            root.Controls.Add(right, 1, 0);
+            this.Controls.Add(root);
         }
 
-        private void PosModuleForm_KeyDown(object sender, KeyEventArgs e)
+        // Helpers for creating consistent labels
+        private Label MakeLabel(string text) => new Label
         {
-            if (e.KeyCode == Keys.F9) BtnCheckout_Click(null, null);
-            if (e.KeyCode == Keys.F1) txtSearch.Focus();
+            Text = text,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Font = new Font("Segoe UI", 9F),
+            ForeColor = Color.FromArgb(80, 80, 80)
+        };
+
+        private Label MakeValueLabel(string text, Color? color = null) => new Label
+        {
+            Text = text,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleRight,
+            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            ForeColor = color ?? Color.FromArgb(33, 33, 33),
+            Padding = new Padding(0, 0, 4, 0)
+        };
+
+        private void SetupCartGrid()
+        {
+            dgvCart.Columns.Add("ProductID", "ID"); dgvCart.Columns["ProductID"].Visible = false;
+            dgvCart.Columns.Add("ProductName", "Tên sản phẩm"); dgvCart.Columns["ProductName"].FillWeight = 200; dgvCart.Columns["ProductName"].ReadOnly = true;
+            dgvCart.Columns.Add("UnitName", "Đơn vị"); dgvCart.Columns["UnitName"].Width = 80; dgvCart.Columns["UnitName"].ReadOnly = true;
+            dgvCart.Columns.Add("UnitPrice", "Đơn giá"); dgvCart.Columns["UnitPrice"].DefaultCellStyle.Format = "N0"; dgvCart.Columns["UnitPrice"].ReadOnly = true;
+            dgvCart.Columns.Add("Quantity", "Số lượng"); dgvCart.Columns["Quantity"].Width = 80;
+            dgvCart.Columns.Add("SubTotal", "Thành tiền"); dgvCart.Columns["SubTotal"].DefaultCellStyle.Format = "N0"; dgvCart.Columns["SubTotal"].ReadOnly = true;
+            
+            DataGridViewButtonColumn btnDel = new DataGridViewButtonColumn { Text = "X", Name = "Delete", UseColumnTextForButtonValue = true, Width = 40 };
+            dgvCart.Columns.Add(btnDel);
+
+            dgvCart.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvCart.CellContentClick += DgvCart_CellContentClick;
+            dgvCart.CellValueChanged += DgvCart_CellValueChanged;
+        }
+
+        private void SetupShortcuts()
+        {
+            this.KeyPreview = true;
+            this.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.F12) ProcessCheckout();
+                if (e.KeyCode == Keys.F4) { _cart.Clear(); RefreshCart(); }
+                if (e.KeyCode == Keys.F1) txtSearch.Focus();
+            };
         }
 
         private void TxtSearch_TextChanged(object sender, EventArgs e)
         {
             string term = txtSearch.Text.Trim();
-            if (term.Length < 2)
-            {
-                lstSearchResults.Visible = false;
-                return;
-            }
+            if (term.Length < 2) { lstSuggestions.Visible = false; return; }
 
-            var results = _controller.SearchProducts(term);
-            if (results.Any())
+            var products = _controller.FindProducts(term);
+            if (products.Any())
             {
-                lstSearchResults.DataSource = results;
-                lstSearchResults.DisplayMember = "ProductName";
-                lstSearchResults.Visible = true;
-                lstSearchResults.BringToFront();
+                lstSuggestions.DataSource = products;
+                lstSuggestions.DisplayMember = "ProductName";
+                lstSuggestions.Visible = true;
+                lstSuggestions.BringToFront();
             }
-            else
-            {
-                lstSearchResults.Visible = false;
-            }
+            else { lstSuggestions.Visible = false; }
         }
 
         private void TxtSearch_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Down && lstSearchResults.Visible)
-            {
-                lstSearchResults.Focus();
-                if (lstSearchResults.Items.Count > 0) lstSearchResults.SelectedIndex = 0;
-            }
-            if (e.KeyCode == Keys.Enter)
-            {
-                var term = txtSearch.Text.Trim();
-                var products = _controller.SearchProducts(term);
-                if (products.Count == 1)
-                {
-                    AddToCart(products[0]);
-                    txtSearch.Clear();
-                }
-            }
+            if (e.KeyCode == Keys.Down && lstSuggestions.Visible) lstSuggestions.Focus();
+            if (e.KeyCode == Keys.Enter && !lstSuggestions.Visible) { /* Handle direct barcode */ }
+            if (e.KeyCode == Keys.Enter && lstSuggestions.Visible) AddSelectedSuggestion();
         }
 
-        private void LstSearchResults_KeyDown(object sender, KeyEventArgs e)
+        private void AddSelectedSuggestion()
         {
-            if (e.KeyCode == Keys.Enter && lstSearchResults.SelectedItem != null)
+            if (lstSuggestions.SelectedItem is CartItem product)
             {
-                AddToCart((CartItem)lstSearchResults.SelectedItem);
+                AddToCart(product);
                 txtSearch.Clear();
+                lstSuggestions.Visible = false;
                 txtSearch.Focus();
-                lstSearchResults.Visible = false;
-            }
-        }
-
-        private void LstSearchResults_DoubleClick(object sender, EventArgs e)
-        {
-            if (lstSearchResults.SelectedItem != null)
-            {
-                AddToCart((CartItem)lstSearchResults.SelectedItem);
-                txtSearch.Clear();
-                txtSearch.Focus();
-                lstSearchResults.Visible = false;
             }
         }
 
         private void AddToCart(CartItem product)
         {
             var existing = _cart.FirstOrDefault(x => x.ProductID == product.ProductID);
-            if (existing != null)
-            {
-                existing.Quantity += 1;
-            }
-            else
-            {
-                _cart.Add(product);
-            }
+            if (existing != null) existing.Quantity += 1;
+            else _cart.Add(product);
             RefreshCart();
         }
 
         private void RefreshCart()
         {
-            dgvCart.DataSource = null;
-            dgvCart.DataSource = _cart;
+            dgvCart.Rows.Clear();
+            foreach (var item in _cart)
+            {
+                dgvCart.Rows.Add(item.ProductID, item.ProductName, item.UnitName, item.UnitPrice, item.Quantity, item.SubTotal);
+            }
             UpdateTotal();
         }
 
         private void UpdateTotal()
         {
             decimal subTotal = _cart.Sum(x => x.SubTotal);
-            _voucherDiscountAmount = 0;
+            lblSubTotal.Text = subTotal.ToString("N0");
 
+            // Voucher logic
+            _voucherDiscount = 0;
             if (_appliedVoucher != null)
             {
                 if (subTotal >= _appliedVoucher.MinOrderValue)
                 {
-                    if (_appliedVoucher.DiscountType == 1) // %
-                    {
-                        _voucherDiscountAmount = subTotal * (_appliedVoucher.DiscountValue / 100m);
-                        if (_appliedVoucher.MaxDiscount.HasValue && _appliedVoucher.MaxDiscount.Value > 0 && _voucherDiscountAmount > _appliedVoucher.MaxDiscount.Value)
-                        {
-                            _voucherDiscountAmount = _appliedVoucher.MaxDiscount.Value;
-                        }
-                    }
-                    else // Cash
-                    {
-                        _voucherDiscountAmount = _appliedVoucher.DiscountValue;
-                    }
+                    _voucherDiscount = _appliedVoucher.DiscountType == 1 ? subTotal * (_appliedVoucher.DiscountValue / 100m) : _appliedVoucher.DiscountValue;
                 }
             }
+            lblVoucherDiscount.Text = "-" + _voucherDiscount.ToString("N0");
 
-            lblVoucherDiscount.Text = $"Giam gia Voucher: -{_voucherDiscountAmount:N0}";
-            
-            decimal total = subTotal - _voucherDiscountAmount;
+            // Points logic
+            _pointsDiscount = 0;
+            _usedPoints = 0;
+            if (chkUsePoints.Checked && _currentCustomer != null)
+            {
+                _usedPoints = _currentCustomer.Points;
+                _pointsDiscount = _usedPoints; // 1 point = 1d
+            }
+            lblPointsDiscount.Text = "-" + _pointsDiscount.ToString("N0");
+
+            decimal total = subTotal - _voucherDiscount - _pointsDiscount;
             if (total < 0) total = 0;
 
             lblTotal.Text = total.ToString("N0");
@@ -265,123 +497,121 @@ namespace SmartPos.Module.Pos.Views
 
         private void CalculateChange()
         {
-            decimal subTotal = _cart.Sum(x => x.SubTotal);
-            decimal total = subTotal - _voucherDiscountAmount;
-            if (total < 0) total = 0;
-
+            decimal total = decimal.Parse(lblTotal.Text.Replace(",", ""));
             decimal change = numPaid.Value - total;
-            lblChange.Text = change >= 0 ? change.ToString("N0") : "0";
+            lblChange.Text = "Tiền thối: " + (change >= 0 ? change.ToString("N0") : "0") + " đ";
+        }
+
+        private void TxtPhone_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                _currentCustomer = _controller.FindCustomer(txtPhone.Text.Trim());
+                if (_currentCustomer != null)
+                {
+                    lblCustomerInfo.Text = $"{_currentCustomer.CustomerName} - Điểm: {_currentCustomer.Points:N0}";
+                    chkUsePoints.Visible = true;
+                    chkUsePoints.Text = $"Dùng {_currentCustomer.Points:N0} điểm (-{_currentCustomer.Points:N0}đ)";
+                }
+                else
+                {
+                    lblCustomerInfo.Text = "Không tìm thấy";
+                    chkUsePoints.Visible = false;
+                }
+                UpdateTotal();
+            }
         }
 
         private void TxtVoucher_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                string code = txtVoucher.Text.Trim();
-                if (string.IsNullOrEmpty(code))
-                {
-                    _appliedVoucher = null;
-                    UpdateTotal();
-                    return;
-                }
+                _appliedVoucher = _controller.GetVoucher(txtVoucher.Text.Trim());
+                UpdateTotal();
+            }
+        }
 
-                var voucher = _controller.GetVoucher(code);
-                if (voucher != null)
-                {
-                    if (voucher.AllowStackDiscount)
-                    {
-                        _appliedVoucher = voucher;
-                        MessageBox.Show($"Ap dung Voucher: {voucher.VoucherCode} thanh cong!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        UpdateTotal();
-                    }
-                    else
-                    {
-                        MessageBox.Show("Voucher nay khong ho tro dung chung hoac khong hop le cho don hang nay.", "Loi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        _appliedVoucher = null;
-                        UpdateTotal();
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Ma giam gia khong ton tai hoac da het han.", "Loi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    _appliedVoucher = null;
-                    UpdateTotal();
-                }
+        private void DgvCart_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex == dgvCart.Columns["Delete"].Index && e.RowIndex >= 0)
+            {
+                _cart.RemoveAt(e.RowIndex);
+                RefreshCart();
             }
         }
 
         private void DgvCart_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
-            UpdateTotal();
-        }
-
-        private void DgvCart_UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e)
-        {
-            // Handled by DataSource binding usually, but we refresh anyway
-            this.BeginInvoke(new MethodInvoker(UpdateTotal));
-        }
-
-        private void TxtCustomerPhone_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter)
+            if (e.RowIndex >= 0 && dgvCart.Columns[e.ColumnIndex].Name == "Quantity")
             {
-                string phone = txtCustomerPhone.Text.Trim();
-                var customer = _controller.GetCustomer(phone);
-                if (customer != null)
-                {
-                    _currentCustomer = customer;
-                    lblCustomerName.Text = customer.CustomerName + " (Diem: " + customer.Points + ")";
-                }
-                else
-                {
-                    if (MessageBox.Show("Khong tim thay khach hang. Them moi nhanh?", "Thong bao", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                    {
-                        // Quick add logic
-                        _currentCustomer = new CustomerInfo { CustomerName = "Khach moi", Phone = phone };
-                        int id = _controller.RegisterCustomer("Khach moi", phone, "");
-                        _currentCustomer.CustomerID = id;
-                        lblCustomerName.Text = "Khach moi (Vua tao)";
-                    }
-                }
-            }
-        }
-
-        private void BtnCheckout_Click(object sender, EventArgs e)
-        {
-            if (!_cart.Any()) return;
-
-            try
-            {
-                var request = new CheckoutRequest
-                {
-                    CustomerID = _currentCustomer?.CustomerID,
-                    UserID = UserSession.CurrentUser?.UserID ?? 1,
-                    TotalAmount = _cart.Sum(x => x.SubTotal) - _voucherDiscountAmount,
-                    PaidAmount = numPaid.Value,
-                    PaymentMethod = (byte)(cboPaymentMethod.SelectedIndex + 1),
-                    VoucherCode = _appliedVoucher?.VoucherCode,
-                    VoucherDiscount = _voucherDiscountAmount,
-                    Items = _cart
-                };
-
-                string code = _controller.Checkout(request);
-                MessageBox.Show("Thanh toan thanh cong! Ma HD: " + code, "Thanh cong", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                
-                // Reset POS
-                _cart.Clear();
-                _currentCustomer = null;
-                _appliedVoucher = null;
-                _voucherDiscountAmount = 0;
-                txtVoucher.Clear();
-                lblVoucherDiscount.Text = "Giam gia Voucher: 0";
-                txtCustomerPhone.Clear();
-                lblCustomerName.Text = "Khach le";
+                int pid = (int)dgvCart.Rows[e.RowIndex].Cells["ProductID"].Value;
+                decimal qty = Convert.ToDecimal(dgvCart.Rows[e.RowIndex].Cells["Quantity"].Value);
+                var item = _cart.First(x => x.ProductID == pid);
+                item.Quantity = qty;
                 RefreshCart();
             }
-            catch (Exception ex)
+        }
+
+        private void UpdateShiftInfo()
+        {
+            lblShiftInfo.Text = $"| NV: {UserSession.CurrentUser?.FullName ?? "Admin"} | {DateTime.Now:dd/MM/yyyy HH:mm}";
+        }
+
+        private void ProcessCheckout()
+        {
+            if (!_cart.Any()) { MessageBox.Show("Giỏ hàng trống!"); return; }
+            if (numPaid.Value < decimal.Parse(lblTotal.Text.Replace(",", ""))) { MessageBox.Show("Tiền khách đưa chưa đủ!"); return; }
+
+            var request = new CheckoutRequest
             {
-                MessageBox.Show(ex.Message, "Loi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomerID = _currentCustomer?.CustomerID,
+                UserID = UserSession.CurrentUser?.UserID ?? 1,
+                SubTotal = _cart.Sum(x => x.SubTotal),
+                TotalAmount = decimal.Parse(lblTotal.Text.Replace(",", "")),
+                PaidAmount = numPaid.Value,
+                PaymentMethod = (byte)(cboPaymentMethod.SelectedIndex + 1),
+                VoucherCode = _appliedVoucher?.VoucherCode,
+                VoucherDiscount = _voucherDiscount,
+                PointsDiscount = _pointsDiscount,
+                UsedPoints = _usedPoints,
+                EarnedPoints = (int)(decimal.Parse(lblTotal.Text.Replace(",", "")) * 0.01m), // 1%
+                Items = _cart
+            };
+
+            int invoiceId = _controller.Checkout(request);
+            if (invoiceId > 0)
+            {
+                MessageBox.Show("Thanh toán thành công!");
+                ShowInvoicePreview(invoiceId);
+                ResetForm();
             }
+        }
+
+        private void ShowInvoicePreview(int invoiceId)
+        {
+            var detail = _invoiceService.GetInvoiceDetail(invoiceId);
+            var config = _invoiceService.GetStoreConfig();
+            using (var preview = new InvoicePreviewForm(detail, config))
+            {
+                preview.ShowDialog();
+            }
+        }
+
+        private void ResetForm()
+        {
+            _cart.Clear();
+            _currentCustomer = null;
+            _appliedVoucher = null;
+            _voucherDiscount = 0;
+            _pointsDiscount = 0;
+            _usedPoints = 0;
+            txtPhone.Clear();
+            txtVoucher.Clear();
+            txtSearch.Clear();
+            chkUsePoints.Checked = false;
+            chkUsePoints.Visible = false;
+            lblCustomerInfo.Text = "Khách lẻ";
+            RefreshCart();
         }
     }
 }

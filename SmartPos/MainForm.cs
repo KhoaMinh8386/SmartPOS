@@ -1,7 +1,8 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using SmartPos.Module.Pos.Views;
+using SmartPos.Module.Pos;
+using SmartPos.Module.Customers.Views;
 using SmartPos.Module.Products.Views;
 using SmartPos.Module.Promotions.Views;
 using SmartPos.Module.InventoryAudit.Views;
@@ -50,6 +51,7 @@ namespace SmartPos
             AddMenuButton("📥 Nhập hàng", "PurchaseOrders", UserSession.IsManager);
             AddMenuButton("🔍 Kiểm kê kho", "Inventory", UserSession.IsManager);
             AddMenuButton("🎫 Khuyến mãi", "Promotions", UserSession.IsManager);
+            AddMenuButton("👤 Khách hàng", "Customers", true);
             AddMenuButton("📊 Báo cáo lợi nhuận", "Reports", UserSession.IsAdmin);
             AddMenuButton("👥 Quản lý nhân viên", "Users", UserSession.IsAdmin);
 
@@ -171,6 +173,9 @@ namespace SmartPos
                     break;
                 case "pos":
                     moduleControl = new PosModuleForm { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
+                    break;
+                case "customers":
+                    moduleControl = new CustomerModuleForm { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
                     break;
                 default:
                     moduleControl = CreatePlaceholder(moduleName);

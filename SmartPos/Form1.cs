@@ -78,7 +78,43 @@ namespace SmartPos
                         "IF COL_LENGTH('dbo.Users', 'IsActive') IS NULL ALTER TABLE dbo.Users ADD IsActive BIT NOT NULL DEFAULT 1;",
                         "IF COL_LENGTH('dbo.Invoices', 'VoucherCode') IS NULL ALTER TABLE dbo.Invoices ADD VoucherCode NVARCHAR(50) NULL;",
                         "IF COL_LENGTH('dbo.Invoices', 'VoucherDiscount') IS NULL ALTER TABLE dbo.Invoices ADD VoucherDiscount DECIMAL(18,2) NOT NULL DEFAULT 0;",
-                        "IF COL_LENGTH('dbo.Invoices', 'SubTotal') IS NULL ALTER TABLE dbo.Invoices ADD SubTotal DECIMAL(18,2) NOT NULL DEFAULT 0;"
+                        "IF COL_LENGTH('dbo.Invoices', 'SubTotal') IS NULL ALTER TABLE dbo.Invoices ADD SubTotal DECIMAL(18,2) NOT NULL DEFAULT 0;",
+                        "IF COL_LENGTH('dbo.Invoices', 'PointsDiscount') IS NULL ALTER TABLE dbo.Invoices ADD PointsDiscount DECIMAL(18,2) NOT NULL DEFAULT 0;",
+                        "IF COL_LENGTH('dbo.Invoices', 'UsedPoints') IS NULL ALTER TABLE dbo.Invoices ADD UsedPoints INT NOT NULL DEFAULT 0;",
+                        "IF COL_LENGTH('dbo.Invoices', 'EarnedPoints') IS NULL ALTER TABLE dbo.Invoices ADD EarnedPoints INT NOT NULL DEFAULT 0;",
+                        @"IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name='Customers')
+                          CREATE TABLE dbo.Customers (
+                            CustomerID INT IDENTITY(1,1) PRIMARY KEY,
+                            CustomerCode NVARCHAR(20) UNIQUE,
+                            FullName NVARCHAR(100) NOT NULL,
+                            Phone NVARCHAR(15), Email NVARCHAR(100),
+                            Address NVARCHAR(255), Gender NVARCHAR(10), DateOfBirth DATE,
+                            TotalPoints INT DEFAULT 0, TotalSpent DECIMAL(18,2) DEFAULT 0,
+                            CustomerType NVARCHAR(50) DEFAULT N'Thường',
+                            Note NVARCHAR(255), CreatedAt DATETIME DEFAULT GETDATE(), UpdatedAt DATETIME);",
+                        @"IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name='CustomerPointsHistory')
+                          CREATE TABLE dbo.CustomerPointsHistory (
+                            ID INT IDENTITY(1,1) PRIMARY KEY,
+                            CustomerID INT NOT NULL, Points INT NOT NULL,
+                            Type NVARCHAR(50), Description NVARCHAR(255),
+                            CreatedAt DATETIME DEFAULT GETDATE(),
+                            FOREIGN KEY (CustomerID) REFERENCES dbo.Customers(CustomerID));",
+                        "IF COL_LENGTH('dbo.Invoices','CustomerID') IS NULL ALTER TABLE dbo.Invoices ADD CustomerID INT NULL;",
+                        // Bổ sung cột mới vào bảng Customers nếu chưa có
+                        "IF COL_LENGTH('dbo.Customers','CustomerCode') IS NULL ALTER TABLE dbo.Customers ADD CustomerCode NVARCHAR(20) NULL;",
+                        "IF COL_LENGTH('dbo.Customers','Email') IS NULL ALTER TABLE dbo.Customers ADD Email NVARCHAR(100) NULL;",
+                        "IF COL_LENGTH('dbo.Customers','Gender') IS NULL ALTER TABLE dbo.Customers ADD Gender NVARCHAR(10) NULL;",
+                        "IF COL_LENGTH('dbo.Customers','DateOfBirth') IS NULL ALTER TABLE dbo.Customers ADD DateOfBirth DATE NULL;",
+                        "IF COL_LENGTH('dbo.Customers','TotalPoints') IS NULL ALTER TABLE dbo.Customers ADD TotalPoints INT NOT NULL DEFAULT 0;",
+                        "IF COL_LENGTH('dbo.Customers','TotalSpent') IS NULL ALTER TABLE dbo.Customers ADD TotalSpent DECIMAL(18,2) NOT NULL DEFAULT 0;",
+                        "IF COL_LENGTH('dbo.Customers','CustomerType') IS NULL ALTER TABLE dbo.Customers ADD CustomerType NVARCHAR(50) NOT NULL DEFAULT N'Thường';",
+                        "IF COL_LENGTH('dbo.Customers','Note') IS NULL ALTER TABLE dbo.Customers ADD Note NVARCHAR(255) NULL;",
+                        "IF COL_LENGTH('dbo.Customers','CreatedAt') IS NULL ALTER TABLE dbo.Customers ADD CreatedAt DATETIME NOT NULL DEFAULT GETDATE();",
+                        "IF COL_LENGTH('dbo.Customers','UpdatedAt') IS NULL ALTER TABLE dbo.Customers ADD UpdatedAt DATETIME NULL;",
+                        // Đồng bộ cột Points cũ -> TotalPoints nếu cần
+                        "IF COL_LENGTH('dbo.Customers','Points') IS NOT NULL AND COL_LENGTH('dbo.Customers','TotalPoints') IS NOT NULL UPDATE dbo.Customers SET TotalPoints = Points WHERE TotalPoints = 0 AND Points > 0;",
+                        // Đồng bộ tên cột CustomerName -> FullName nếu chưa có FullName
+                        "IF COL_LENGTH('dbo.Customers','FullName') IS NULL AND COL_LENGTH('dbo.Customers','CustomerName') IS NOT NULL EXEC sp_rename 'dbo.Customers.CustomerName', 'FullName', 'COLUMN';"
                     };
                     
                     foreach(var sql in sqls)
