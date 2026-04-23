@@ -58,5 +58,16 @@ namespace SmartPos.Module.Suppliers.Controllers
 
             _backend.AddPayment(request);
         }
+        public void SaveSupplier(SupplierListItem supplier)
+        {
+            if (supplier == null || string.IsNullOrWhiteSpace(supplier.SupplierName))
+                throw new InvalidOperationException("Tên nhà cung cấp không được để trống.");
+            _backend.SaveSupplier(supplier);
+        }
+
+        public void DeleteSupplier(int id)
+        {
+            _backend.DeleteSupplier(id);
+        }
     }
 }

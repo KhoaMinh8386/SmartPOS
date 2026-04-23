@@ -25,13 +25,14 @@ namespace SmartPos.Module.Products.Views
         private Button btnManageCategories;
 
         // Editor Controls
-        private Panel pnlEditor;
+        private Panel pnlEditor, container;
         private TextBox txtName, txtSKU, txtBarcode, txtDescription, txtLocation, txtImageUrl;
         private ComboBox cboCategory, cboSupplier, cboUnit;
         private NumericUpDown numCost, numRetail, numWholesale, numWeight;
         private CheckBox chkActive, chkExpiry;
-        private Button btnSave, btnCancel;
+        private Button btnSave, btnCancel, btnUpload;
         private Label lblEditorTitle;
+        private PictureBox picProduct;
 
         private int _currentProductId = 0;
 
@@ -110,65 +111,60 @@ namespace SmartPos.Module.Products.Views
             leftPanel.Controls.Add(searchPanel);
 
             // Right Panel - Editor
-            pnlEditor = new Panel { Dock = DockStyle.Fill, Padding = new Padding(15), Visible = false, BorderStyle = BorderStyle.FixedSingle };
-            lblEditorTitle = new Label { Text = "Chi tiết sản phẩm", Font = new Font("Segoe UI", 14F, FontStyle.Bold), Dock = DockStyle.Top, Height = 40 };
+            pnlEditor = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20), Visible = false, BackColor = Color.FromArgb(248, 250, 252), BorderStyle = BorderStyle.FixedSingle };
+            lblEditorTitle = new Label { Text = "CHI TIẾT SẢN PHẨM", Font = new Font("Segoe UI", 14F, FontStyle.Bold), Dock = DockStyle.Top, Height = 40, ForeColor = Color.FromArgb(30, 41, 59) };
             
-            var flow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, AutoScroll = true, WrapContents = false };
+            container = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
             
-            flow.Controls.Add(CreateLabel("Tên sản phẩm *"));
-            txtName = CreateTextBox(350); flow.Controls.Add(txtName);
+            // Image Preview Card
+            var pnlImageCard = new Panel { Width = 360, Height = 220, BackColor = Color.White, Location = new Point(0, 0), BorderStyle = BorderStyle.FixedSingle };
+            picProduct = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.FromArgb(241, 245, 249) };
+            btnUpload = new Button { Text = "📷 TẢI ẢNH LÊN CLOUD", Dock = DockStyle.Bottom, Height = 40, BackColor = Color.FromArgb(51, 65, 85), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9F, FontStyle.Bold), Cursor = Cursors.Hand };
+            btnUpload.Click += btnUpload_Click;
+            pnlImageCard.Controls.Add(picProduct);
+            pnlImageCard.Controls.Add(btnUpload);
+            container.Controls.Add(pnlImageCard);
 
-            flow.Controls.Add(CreateLabel("Mã sản phẩm (SKU) *"));
-            txtSKU = CreateTextBox(170); flow.Controls.Add(txtSKU);
+            // Inputs
+            int startY = 230;
+            AddInputPair(container, "Tên sản phẩm *", txtName = CreateTextBox(360), 0, startY);
+            AddInputPair(container, "Mã SKU *", txtSKU = CreateTextBox(175), 0, startY + 65);
+            AddInputPair(container, "Mã vạch (Barcode)", txtBarcode = CreateTextBox(175), 185, startY + 65);
+            
+            AddInputPair(container, "Mô tả", txtDescription = CreateTextBox(360), 0, startY + 130);
+            
+            AddInputPair(container, "Danh mục", cboCategory = CreateComboBox(360), 0, startY + 195);
+            AddInputPair(container, "Nhà cung cấp", cboSupplier = CreateComboBox(360), 0, startY + 260);
+            
+            AddInputPair(container, "Giá vốn", numCost = CreateNumeric(115), 0, startY + 325);
+            AddInputPair(container, "Giá lẻ", numRetail = CreateNumeric(115), 122, startY + 325);
+            AddInputPair(container, "Giá sỉ", numWholesale = CreateNumeric(115), 244, startY + 325);
 
-            flow.Controls.Add(CreateLabel("Mã vạch (Barcode)"));
-            txtBarcode = CreateTextBox(170); flow.Controls.Add(txtBarcode);
+            AddInputPair(container, "Đơn vị tính", cboUnit = CreateComboBox(175), 0, startY + 390);
+            AddInputPair(container, "Trọng lượng", numWeight = CreateNumeric(175), 185, startY + 390);
 
-            flow.Controls.Add(CreateLabel("Mô tả"));
-            txtDescription = CreateTextBox(350); flow.Controls.Add(txtDescription);
+            AddInputPair(container, "Vị trí kệ", txtLocation = CreateTextBox(175), 0, startY + 455);
+            AddInputPair(container, "URL Hình ảnh", txtImageUrl = CreateTextBox(175), 185, startY + 455);
+            txtImageUrl.TextChanged += (s, e) => LoadProductImage(txtImageUrl.Text);
 
-            flow.Controls.Add(CreateLabel("Danh mục"));
-            cboCategory = CreateComboBox(250); flow.Controls.Add(cboCategory);
+            chkActive = new CheckBox { Text = "Đang kinh doanh", Checked = true, Location = new Point(0, startY + 520), AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
+            chkExpiry = new CheckBox { Text = "Có hạn sử dụng", Location = new Point(150, startY + 520), AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
+            container.Controls.AddRange(new Control[] { chkActive, chkExpiry });
 
-            flow.Controls.Add(CreateLabel("Nhà cung cấp"));
-            cboSupplier = CreateComboBox(250); flow.Controls.Add(cboSupplier);
-
-            flow.Controls.Add(CreateLabel("Đơn vị tính"));
-            cboUnit = CreateComboBox(150); flow.Controls.Add(cboUnit);
-
-            flow.Controls.Add(CreateLabel("Giá vốn"));
-            numCost = CreateNumeric(150); flow.Controls.Add(numCost);
-
-            flow.Controls.Add(CreateLabel("Giá bán lẻ"));
-            numRetail = CreateNumeric(150); flow.Controls.Add(numRetail);
-
-            flow.Controls.Add(CreateLabel("Giá bán sỉ"));
-            numWholesale = CreateNumeric(150); flow.Controls.Add(numWholesale);
-
-            flow.Controls.Add(CreateLabel("Trọng lượng"));
-            numWeight = CreateNumeric(150); flow.Controls.Add(numWeight);
-
-            flow.Controls.Add(CreateLabel("Vị trí kệ"));
-            txtLocation = CreateTextBox(250); flow.Controls.Add(txtLocation);
-
-            flow.Controls.Add(CreateLabel("Đường dẫn ảnh"));
-            txtImageUrl = CreateTextBox(350); flow.Controls.Add(txtImageUrl);
-
-            chkActive = new CheckBox { Text = "Đang kinh doanh", Checked = true, Margin = new Padding(0, 10, 0, 0) }; flow.Controls.Add(chkActive);
-            chkExpiry = new CheckBox { Text = "Có hạn sử dụng" }; flow.Controls.Add(chkExpiry);
-
-            var buttonPanel = new Panel { Height = 50, Margin = new Padding(0, 20, 0, 0), Width = 350 };
-            btnSave = new Button { Text = "Lưu", Size = new Size(100, 35), Location = new Point(0, 0), BackColor = Color.FromArgb(33, 150, 243), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            var buttonPanel = new Panel { Height = 50, Width = 360, Location = new Point(0, startY + 565) };
+            btnSave = new Button { Text = "LƯU THÔNG TIN", Size = new Size(115, 45), Location = new Point(0, 0), BackColor = Color.FromArgb(16, 185, 129), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9F, FontStyle.Bold), Cursor = Cursors.Hand };
             btnSave.Click += btnSave_Click;
-            btnCancel = new Button { Text = "Hủy", Size = new Size(100, 35), Location = new Point(110, 0) };
-            btnCancel.Click += (s, e) => pnlEditor.Visible = false;
-            btnDelete = new Button { Text = "Xóa", Size = new Size(100, 35), Location = new Point(220, 0), BackColor = Color.Firebrick, ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
-            btnDelete.Click += btnDelete_Click;
             
-            buttonPanel.Controls.AddRange(new Control[] { btnSave, btnCancel, btnDelete });
-            flow.Controls.Add(buttonPanel);
+            btnDelete = new Button { Text = "XÓA", Size = new Size(115, 45), Location = new Point(122, 0), BackColor = Color.FromArgb(239, 68, 68), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9F, FontStyle.Bold), Cursor = Cursors.Hand };
+            btnDelete.Click += btnDelete_Click;
 
-            pnlEditor.Controls.Add(flow);
+            btnCancel = new Button { Text = "HỦY", Size = new Size(115, 45), Location = new Point(244, 0), BackColor = Color.FromArgb(226, 232, 240), FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9F, FontStyle.Bold), Cursor = Cursors.Hand };
+            btnCancel.Click += (s, e) => pnlEditor.Visible = false;
+            
+            buttonPanel.Controls.AddRange(new Control[] { btnSave, btnDelete, btnCancel });
+            container.Controls.Add(buttonPanel);
+
+            pnlEditor.Controls.Add(container);
             pnlEditor.Controls.Add(lblEditorTitle);
 
             mainSplit.Panel1.Controls.Add(leftPanel);
@@ -190,17 +186,12 @@ namespace SmartPos.Module.Products.Views
                 lblEditorTitle.Text = "Chi tiết sản phẩm (Chế độ Xem)";
                 // Vô hiệu hóa toàn bộ panel nhập liệu
                 pnlEditor.Enabled = true; // Panel chính mở để thấy thông tin
-                foreach (Control c in pnlEditor.Controls) 
+                foreach (Control c in container.Controls) 
                 {
-                    if (c is FlowLayoutPanel flp) 
-                    {
-                        foreach (Control ctrl in flp.Controls) 
-                        {
-                            // Chỉ cho phép nút Cancel hoạt động
-                            if (ctrl.Text != "Cancel") ctrl.Enabled = false;
-                        }
-                    }
+                    if (c is TextBox || c is ComboBox || c is NumericUpDown || c is CheckBox)
+                        c.Enabled = false;
                 }
+                btnUpload.Enabled = false;
             }
         }
 
@@ -295,8 +286,57 @@ namespace SmartPos.Module.Products.Views
                     txtImageUrl.Text = p.ImageUrl;
                     chkActive.Checked = p.IsActive;
                     chkExpiry.Checked = p.HasExpiry;
+                    LoadProductImage(p.ImageUrl);
                 }
             }
+        }
+
+        private void LoadProductImage(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                picProduct.Image = null;
+                return;
+            }
+            try { picProduct.LoadAsync(url); } catch { picProduct.Image = null; }
+        }
+
+        private async void btnUpload_Click(object sender, EventArgs e)
+        {
+            using (var ofd = new OpenFileDialog { Filter = "Image Files|*.jpg;*.jpeg;*.png;*.gif" })
+            {
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        btnUpload.Text = "⏳ ĐANG TẢI LÊN...";
+                        btnUpload.Enabled = false;
+                        var service = new Common.Services.CloudinaryService();
+                        var url = await service.UploadImageAsync(ofd.FileName);
+                        txtImageUrl.Text = url;
+                        LoadProductImage(url);
+                        MessageBox.Show("Tải ảnh lên thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Lỗi upload", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    finally
+                    {
+                        btnUpload.Text = "📷 TẢI ẢNH LÊN CLOUD";
+                        btnUpload.Enabled = true;
+                    }
+                }
+            }
+        }
+
+        private void AddInputPair(Control parent, string labelText, Control inputControl, int x, int y)
+        {
+            var lbl = CreateLabel(labelText);
+            lbl.Location = new Point(x, y);
+            inputControl.Location = new Point(x, y + 25);
+            parent.Controls.Add(lbl);
+            parent.Controls.Add(inputControl);
         }
 
         private void btnSave_Click(object sender, EventArgs e)

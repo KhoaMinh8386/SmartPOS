@@ -59,9 +59,9 @@ SELECT
     ISNULL(paid.PaidAmount, 0) AS PaidAmount,
     po.TotalAmount - ISNULL(paid.PaidAmount, 0) AS DebtAmount,
     CASE
-        WHEN po.TotalAmount - ISNULL(paid.PaidAmount, 0) <= 0 THEN N'Da thanh toan'
-        WHEN ISNULL(paid.PaidAmount, 0) = 0 THEN N'Chua thanh toan'
-        ELSE N'Thanh toan mot phan'
+        WHEN po.TotalAmount - ISNULL(paid.PaidAmount, 0) <= 0 THEN N'Đã thanh toán'
+        WHEN ISNULL(paid.PaidAmount, 0) = 0 THEN N'Chưa thanh toán'
+        ELSE N'Thanh toán một phần'
     END AS StatusText
 FROM dbo.PurchaseOrders po
 OUTER APPLY (

@@ -15,6 +15,7 @@ namespace SmartPos.Module.Suppliers.Views
 
         private DataGridView dgvSuppliers;
         private DataGridView dgvOrders;
+        private Button btnRefresh, btnAdd, btnEdit, btnDeleteSupplier;
         private PictureBox picSupplier;
         private Label lblSupplierName;
         private Label lblPhone;
@@ -25,7 +26,6 @@ namespace SmartPos.Module.Suppliers.Views
         private TextBox txtPaymentNote;
         private Label lblError;
         private Button btnPay;
-        private Button btnRefresh;
 
         private List<SupplierListItem> _suppliers;
         private List<SupplierOrderItem> _orders;
@@ -46,27 +46,64 @@ namespace SmartPos.Module.Suppliers.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Khong the khoi tao module nha cung cap.\n\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Không thể khởi tạo module nhà cung cấp.\n\n" + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void InitializeUi()
         {
-            Text = "Supplier Module - Quan ly cong no";
+            Text = "QUẢN LÝ CÔNG NỢ NHÀ CUNG CẤP";
             StartPosition = FormStartPosition.CenterParent;
-            Width = 1200;
-            Height = 720;
-            BackColor = Color.White;
+            Width = 1300;
+            Height = 800;
+            BackColor = Color.FromArgb(240, 242, 245);
+            Font = new Font("Segoe UI", 10F);
 
-            var split = new SplitContainer
+            // Giao diện chính chia làm 2 cột: Danh sách (Trái) và Chi tiết (Phải)
+            var root = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                SplitterDistance = 380,
-                FixedPanel = FixedPanel.Panel1
+                ColumnCount = 2,
+                RowCount = 1,
+                Padding = new Padding(15)
             };
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28F));
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72F));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
-            var leftPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12) };
-            var rightPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12) };
+            // PANEL BÊN TRÁI: Danh sách Nhà cung cấp
+            var leftPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
+            
+            var leftHeader = new TableLayoutPanel 
+            { 
+                Dock = DockStyle.Top, 
+                Height = 45, 
+                ColumnCount = 4, 
+                RowCount = 1,
+                BackColor = Color.FromArgb(241, 245, 249),
+                Padding = new Padding(2)
+            };
+            leftHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            leftHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            leftHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            leftHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+
+            btnRefresh = CreateHeaderButton("🔄", Color.White, Color.Black);
+            btnRefresh.Click += btnRefresh_Click;
+            
+            btnAdd = CreateHeaderButton("➕", Color.FromArgb(34, 197, 94), Color.White);
+            btnAdd.Click += btnAdd_Click;
+
+            btnEdit = CreateHeaderButton("📝", Color.FromArgb(59, 130, 246), Color.White);
+            btnEdit.Click += btnEdit_Click;
+
+            btnDeleteSupplier = CreateHeaderButton("🗑️", Color.FromArgb(239, 68, 68), Color.White);
+            btnDeleteSupplier.Click += btnDeleteSupplier_Click;
+
+            leftHeader.Controls.Add(btnRefresh, 0, 0);
+            leftHeader.Controls.Add(btnAdd, 1, 0);
+            leftHeader.Controls.Add(btnEdit, 2, 0);
+            leftHeader.Controls.Add(btnDeleteSupplier, 3, 0);
 
             dgvSuppliers = new DataGridView
             {
@@ -76,47 +113,59 @@ namespace SmartPos.Module.Suppliers.Views
                 AllowUserToDeleteRows = false,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 MultiSelect = false,
-                AutoGenerateColumns = false
+                AutoGenerateColumns = false,
+                BackgroundColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                RowTemplate = { Height = 45 },
+                GridColor = Color.FromArgb(230, 233, 237),
+                EnableHeadersVisualStyles = false,
+                CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal,
+                ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None
             };
+            dgvSuppliers.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 73, 94);
+            dgvSuppliers.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvSuppliers.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            dgvSuppliers.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dgvSuppliers.ColumnHeadersHeight = 45;
             dgvSuppliers.SelectionChanged += dgvSuppliers_SelectionChanged;
 
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ten", DataPropertyName = "SupplierName", Width = 160 });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Dien thoai", DataPropertyName = "Phone", Width = 110 });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Tong cong no", DataPropertyName = "TotalDebt", Width = 95, DefaultCellStyle = new DataGridViewCellStyle { Format = "N0" } });
-
-            btnRefresh = new Button
-            {
-                Text = "Lam moi",
-                Dock = DockStyle.Top,
-                Height = 34,
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold)
-            };
-            btnRefresh.Click += btnRefresh_Click;
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Nhà cung cấp", DataPropertyName = "SupplierName", Width = 180 });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Tổng nợ", DataPropertyName = "TotalDebt", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Format = "N0", Alignment = DataGridViewContentAlignment.MiddleRight } });
+            dgvSuppliers.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
             leftPanel.Controls.Add(dgvSuppliers);
-            leftPanel.Controls.Add(btnRefresh);
+            leftPanel.Controls.Add(leftHeader);
 
-            var infoPanel = new Panel { Dock = DockStyle.Top, Height = 170, BorderStyle = BorderStyle.FixedSingle };
+            // PANEL BÊN PHẢI: Thông tin chi tiết & Thanh toán
+            var rightContainer = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = new Padding(10, 0, 0, 0) };
+            rightContainer.RowStyles.Add(new RowStyle(SizeType.Absolute, 200)); // Info Card (Tăng lên 200 để tránh che chữ)
+            rightContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Orders Grid
+            rightContainer.RowStyles.Add(new RowStyle(SizeType.Absolute, 130)); // Payment Card (Giảm xuống 130 cho gọn)
 
+            // 1. Info Card (Top)
+            var infoCard = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(20), Margin = new Padding(0, 0, 0, 10) };
             picSupplier = new PictureBox
             {
-                Location = new Point(12, 12),
-                Size = new Size(120, 120),
+                Location = new Point(25, 25),
+                Size = new Size(130, 130),
                 SizeMode = PictureBoxSizeMode.Zoom,
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.FromArgb(248, 250, 252)
             };
+            lblSupplierName = new Label { Location = new Point(180, 25), AutoSize = true, Font = new Font("Segoe UI", 18F, FontStyle.Bold), ForeColor = Color.FromArgb(30, 41, 59) };
+            lblPhone = new Label { Location = new Point(180, 70), AutoSize = true, Font = new Font("Segoe UI", 11F), ForeColor = Color.FromArgb(71, 85, 105) };
+            lblAddress = new Label { Location = new Point(180, 100), Size = new Size(600, 45), Font = new Font("Segoe UI", 11F), ForeColor = Color.FromArgb(71, 85, 105) };
+            lblTotalDebt = new Label { Location = new Point(180, 145), AutoSize = true, Font = new Font("Segoe UI", 15F, FontStyle.Bold), ForeColor = Color.FromArgb(220, 38, 38) };
 
-            lblSupplierName = new Label { Location = new Point(145, 18), AutoSize = true, Font = new Font("Segoe UI", 12F, FontStyle.Bold) };
-            lblPhone = new Label { Location = new Point(145, 52), AutoSize = true, Font = new Font("Segoe UI", 10F) };
-            lblAddress = new Label { Location = new Point(145, 78), Size = new Size(600, 42), Font = new Font("Segoe UI", 10F) };
-            lblTotalDebt = new Label { Location = new Point(145, 127), AutoSize = true, Font = new Font("Segoe UI", 11F, FontStyle.Bold), ForeColor = Color.Firebrick };
+            infoCard.Controls.Add(picSupplier);
+            infoCard.Controls.Add(lblSupplierName);
+            infoCard.Controls.Add(lblPhone);
+            infoCard.Controls.Add(lblAddress);
+            infoCard.Controls.Add(lblTotalDebt);
+            rightContainer.Controls.Add(infoCard, 0, 0);
 
-            infoPanel.Controls.Add(picSupplier);
-            infoPanel.Controls.Add(lblSupplierName);
-            infoPanel.Controls.Add(lblPhone);
-            infoPanel.Controls.Add(lblAddress);
-            infoPanel.Controls.Add(lblTotalDebt);
-
+            // 2. Orders Grid (Center)
+            var ordersCard = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1), Margin = new Padding(0, 0, 0, 15) };
             dgvOrders = new DataGridView
             {
                 Dock = DockStyle.Fill,
@@ -125,80 +174,140 @@ namespace SmartPos.Module.Suppliers.Views
                 AllowUserToDeleteRows = false,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 MultiSelect = false,
-                AutoGenerateColumns = false
+                AutoGenerateColumns = false,
+                BackgroundColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                RowTemplate = { Height = 42 },
+                GridColor = Color.FromArgb(230, 233, 237),
+                EnableHeadersVisualStyles = false,
+                CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal,
+                ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None
             };
+            dgvOrders.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(71, 85, 105);
+            dgvOrders.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvOrders.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            dgvOrders.ColumnHeadersHeight = 45;
+            dgvOrders.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
 
-            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ma hoa don", DataPropertyName = "InvoiceCode", Width = 120 });
-            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ngay", DataPropertyName = "OrderDate", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Format = "dd/MM/yyyy HH:mm" } });
-            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Tong tien", DataPropertyName = "TotalAmount", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Format = "N0" } });
-            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Da tra", DataPropertyName = "PaidAmount", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Format = "N0" } });
-            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Con no", DataPropertyName = "DebtAmount", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Format = "N0" } });
-            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Trang thai", DataPropertyName = "StatusText", Width = 150 });
+            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Mã hóa đơn", DataPropertyName = "InvoiceCode", Width = 150 });
+            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ngày nhập", DataPropertyName = "OrderDate", Width = 150, DefaultCellStyle = new DataGridViewCellStyle { Format = "dd/MM/yyyy HH:mm" } });
+            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Tổng tiền", DataPropertyName = "TotalAmount", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Format = "N0", Alignment = DataGridViewContentAlignment.MiddleRight } });
+            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Đã trả", DataPropertyName = "PaidAmount", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Format = "N0", Alignment = DataGridViewContentAlignment.MiddleRight } });
+            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Còn nợ", DataPropertyName = "DebtAmount", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Format = "N0", Alignment = DataGridViewContentAlignment.MiddleRight, ForeColor = Color.Red } });
+            dgvOrders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Trạng thái", DataPropertyName = "StatusText", Width = 140 });
+            dgvOrders.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-            var paymentPanel = new Panel { Dock = DockStyle.Bottom, Height = 130, BorderStyle = BorderStyle.FixedSingle, Padding = new Padding(10) };
+            ordersCard.Controls.Add(dgvOrders);
+            rightContainer.Controls.Add(ordersCard, 0, 1);
 
-            var lblAmount = new Label { Text = "So tien thanh toan", Location = new Point(10, 14), AutoSize = true };
-            numPaymentAmount = new NumericUpDown
-            {
-                Location = new Point(140, 10),
-                Width = 160,
-                DecimalPlaces = 0,
-                Maximum = 1000000000,
-                ThousandsSeparator = true
-            };
+            // 3. Payment Section (Bottom)
+            var paymentCard = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(15) };
+            var tlpPay = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 2 };
+            tlpPay.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
+            tlpPay.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
+            tlpPay.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpPay.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
 
-            var lblMethod = new Label { Text = "Phuong thuc", Location = new Point(330, 14), AutoSize = true };
-            cboPaymentMethod = new ComboBox
-            {
-                Location = new Point(410, 10),
-                Width = 170,
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cboPaymentMethod.Items.Add(new PaymentMethodItem { Id = 1, Name = "Tien mat" });
-            cboPaymentMethod.Items.Add(new PaymentMethodItem { Id = 2, Name = "Chuyen khoan" });
+            tlpPay.Controls.Add(new Label { Text = "SỐ TIỀN THANH TOÁN:", Font = new Font("Segoe UI", 8.5F, FontStyle.Bold), AutoSize = true }, 0, 0);
+            numPaymentAmount = new NumericUpDown { Width = 170, Font = new Font("Segoe UI", 13F, FontStyle.Bold), Maximum = 1000000000, ThousandsSeparator = true };
+            tlpPay.Controls.Add(numPaymentAmount, 0, 1);
+
+            tlpPay.Controls.Add(new Label { Text = "PHƯƠNG THỨC:", Font = new Font("Segoe UI", 8.5F, FontStyle.Bold), AutoSize = true }, 1, 0);
+            cboPaymentMethod = new ComboBox { Width = 160, Font = new Font("Segoe UI", 10F), DropDownStyle = ComboBoxStyle.DropDownList };
+            cboPaymentMethod.Items.Add(new PaymentMethodItem { Id = 1, Name = "Tiền mặt" });
+            cboPaymentMethod.Items.Add(new PaymentMethodItem { Id = 2, Name = "Chuyển khoản" });
             cboPaymentMethod.SelectedIndex = 0;
+            tlpPay.Controls.Add(cboPaymentMethod, 1, 1);
 
-            var lblNote = new Label { Text = "Ghi chu", Location = new Point(10, 48), AutoSize = true };
-            txtPaymentNote = new TextBox { Location = new Point(140, 45), Width = 440 };
+            tlpPay.Controls.Add(new Label { Text = "GHI CHÚ:", Font = new Font("Segoe UI", 8.5F, FontStyle.Bold), AutoSize = true }, 2, 0);
+            txtPaymentNote = new TextBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10F) };
+            tlpPay.Controls.Add(txtPaymentNote, 2, 1);
 
             btnPay = new Button
             {
-                Text = "Thanh toan",
-                Location = new Point(600, 10),
-                Size = new Size(130, 60),
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                BackColor = Color.FromArgb(25, 118, 210),
+                Text = "THANH TOÁN",
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                BackColor = Color.FromArgb(16, 185, 129),
                 ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
             };
+            btnPay.FlatAppearance.BorderSize = 0;
             btnPay.Click += btnPay_Click;
+            tlpPay.SetRowSpan(btnPay, 2);
+            tlpPay.Controls.Add(btnPay, 3, 0);
 
-            lblError = new Label
+            lblError = new Label { ForeColor = Color.Red, Font = new Font("Segoe UI", 9F, FontStyle.Italic), AutoSize = true, Visible = false };
+            paymentCard.Controls.Add(tlpPay);
+            paymentCard.Controls.Add(lblError);
+            
+            rightContainer.Controls.Add(paymentCard, 0, 2);
+
+            root.Controls.Add(leftPanel, 0, 0);
+            root.Controls.Add(rightContainer, 1, 0);
+            Controls.Add(root);
+        }
+
+        private Button CreateHeaderButton(string text, Color backColor, Color foreColor)
+        {
+            return new Button
             {
-                ForeColor = Color.Firebrick,
-                Location = new Point(140, 80),
-                Width = 700,
-                Height = 30,
-                Visible = false
+                Text = text,
+                Dock = DockStyle.Fill,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = backColor,
+                ForeColor = foreColor,
+                Font = new Font("Segoe UI Semibold", 12F),
+                Cursor = Cursors.Hand,
+                Margin = new Padding(2)
             };
+        }
 
-            paymentPanel.Controls.Add(lblAmount);
-            paymentPanel.Controls.Add(numPaymentAmount);
-            paymentPanel.Controls.Add(lblMethod);
-            paymentPanel.Controls.Add(cboPaymentMethod);
-            paymentPanel.Controls.Add(lblNote);
-            paymentPanel.Controls.Add(txtPaymentNote);
-            paymentPanel.Controls.Add(btnPay);
-            paymentPanel.Controls.Add(lblError);
+        private void btnAdd_Click(object sender, EventArgs e)
+        {
+            using (var f = new SupplierEditForm())
+            {
+                if (f.ShowDialog() == DialogResult.OK)
+                {
+                    LoadSuppliers();
+                }
+            }
+        }
 
-            rightPanel.Controls.Add(dgvOrders);
-            rightPanel.Controls.Add(paymentPanel);
-            rightPanel.Controls.Add(infoPanel);
+        private void btnEdit_Click(object sender, EventArgs e)
+        {
+            if (dgvSuppliers.CurrentRow?.DataBoundItem is SupplierListItem supplier)
+            {
+                using (var f = new SupplierEditForm(supplier))
+                {
+                    if (f.ShowDialog() == DialogResult.OK)
+                    {
+                        LoadSuppliers();
+                    }
+                }
+            }
+        }
 
-            split.Panel1.Controls.Add(leftPanel);
-            split.Panel2.Controls.Add(rightPanel);
-
-            Controls.Add(split);
+        private void btnDeleteSupplier_Click(object sender, EventArgs e)
+        {
+            if (dgvSuppliers.CurrentRow?.DataBoundItem is SupplierListItem supplier)
+            {
+                if (MessageBox.Show($"Bạn có chắc chắn muốn xóa nhà cung cấp '{supplier.SupplierName}'?", "Xác nhận xóa", 
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                {
+                    try
+                    {
+                        _controller.DeleteSupplier(supplier.SupplierID);
+                        LoadSuppliers();
+                        MessageBox.Show("Đã xóa nhà cung cấp thành công.");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Lỗi khi xóa: " + ex.Message);
+                    }
+                }
+            }
         }
 
         private void LoadSuppliers()
@@ -231,18 +340,18 @@ namespace SmartPos.Module.Suppliers.Views
 
             if (supplier == null)
             {
-                lblSupplierName.Text = "Khong co nha cung cap";
-                lblPhone.Text = "Dien thoai:";
-                lblAddress.Text = "Dia chi:";
-                lblTotalDebt.Text = "Tong cong no: 0";
+                lblSupplierName.Text = "Không có nhà cung cấp";
+                lblPhone.Text = "Điện thoại:";
+                lblAddress.Text = "Địa chỉ:";
+                lblTotalDebt.Text = "Tổng cộng nợ: 0";
                 picSupplier.Image = null;
                 return;
             }
 
             lblSupplierName.Text = supplier.SupplierName;
-            lblPhone.Text = "Dien thoai: " + supplier.Phone;
-            lblAddress.Text = "Dia chi: " + supplier.Address;
-            lblTotalDebt.Text = "Tong cong no: " + supplier.TotalDebt.ToString("N0", CultureInfo.InvariantCulture);
+            lblPhone.Text = "Điện thoại: " + supplier.Phone;
+            lblAddress.Text = "Địa chỉ: " + supplier.Address;
+            lblTotalDebt.Text = "Tổng cộng nợ: " + supplier.TotalDebt.ToString("N0", CultureInfo.InvariantCulture);
 
             LoadSupplierImage(supplier.ImageUrl);
         }
@@ -292,26 +401,26 @@ namespace SmartPos.Module.Suppliers.Views
 
             if (supplier == null)
             {
-                ShowError("Vui long chon nha cung cap.");
+                ShowError("Vui lòng chọn nhà cung cấp.");
                 return;
             }
 
             if (order == null)
             {
-                ShowError("Vui long chon phieu nhap can thanh toan.");
+                ShowError("Vui lòng chọn phiếu nhập cần thanh toán.");
                 return;
             }
 
             decimal amount = numPaymentAmount.Value;
             if (amount <= 0)
             {
-                ShowError("So tien thanh toan phai lon hon 0.");
+                ShowError("Số tiền thanh toán phải lớn hơn 0.");
                 return;
             }
 
             if (amount > order.DebtAmount)
             {
-                ShowError("So tien thanh toan vuot qua cong no cua phieu nhap.");
+                ShowError("Số tiền thanh toán vượt quá công nợ của phiếu nhập.");
                 return;
             }
 
@@ -342,7 +451,7 @@ namespace SmartPos.Module.Suppliers.Views
                 LoadSuppliers();
                 ReselectRows(supplierId, purchaseOrderId);
 
-                MessageBox.Show("Thanh toan thanh cong.", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Thanh toán thành công.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
