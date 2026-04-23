@@ -53,5 +53,10 @@ namespace SmartPos.Module.Pos.Controllers
         {
             return _backend.GetInvoiceDetail(invoiceId);
         }
+        public VoucherInfo GetVoucher(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code)) return null;
+            return _backend.GetVoucher(code);
+        }
     }
 }

@@ -2,11 +2,6 @@ namespace SmartPos.Module.Products.Templates
 {
     internal static class ProductSqlTemplate
     {
-        public const string GetCategories = @"
-SELECT CategoryID, CategoryName, Description, IsActive
-FROM dbo.Categories
-ORDER BY CategoryName;";
-
         public const string GetProducts = @"
 SELECT 
     p.ProductID, 
@@ -60,18 +55,33 @@ WHERE ProductID = @ProductID;";
 
         public const string DeleteProduct = @"UPDATE dbo.Products SET IsActive = 0 WHERE ProductID = @ProductID;";
 
+        public const string EnsureCategorySchema = @"
+IF COL_LENGTH('dbo.Categories', 'ParentID') IS NULL
+    ALTER TABLE dbo.Categories ADD ParentID INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Categories_Parent')
+    ALTER TABLE dbo.Categories ADD CONSTRAINT FK_Categories_Parent FOREIGN KEY (ParentID) REFERENCES dbo.Categories(CategoryID);";
+
+        public const string GetCategories = @"
+SELECT c.*, p.CategoryName as ParentName
+FROM dbo.Categories c
+LEFT JOIN dbo.Categories p ON c.ParentID = p.CategoryID
+ORDER BY c.ParentID, c.CategoryName;";
+
         public const string InsertCategory = @"
-INSERT INTO dbo.Categories (CategoryName, Description, IsActive)
-VALUES (@CategoryName, @Description, @IsActive);";
+INSERT INTO dbo.Categories (CategoryName, ParentID, Description, IsActive)
+VALUES (@CategoryName, @ParentID, @Description, @IsActive);";
 
         public const string UpdateCategory = @"
 UPDATE dbo.Categories SET
     CategoryName = @CategoryName,
+    ParentID = @ParentID,
     Description = @Description,
     IsActive = @IsActive
 WHERE CategoryID = @CategoryID;";
 
         public const string DeleteCategory = @"UPDATE dbo.Categories SET IsActive = 0 WHERE CategoryID = @CategoryID;";
+
+        public const string HasProducts = @"SELECT TOP 1 1 FROM dbo.Products WHERE CategoryID = @CategoryID;";
 
         public const string GetSuppliersLookup = @"SELECT SupplierID, SupplierName FROM dbo.Suppliers WHERE IsActive = 1 ORDER BY SupplierName;";
 

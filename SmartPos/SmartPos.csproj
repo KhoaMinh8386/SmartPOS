@@ -33,6 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -77,6 +78,12 @@
     <Compile Include="module\Products\Views\CategoryModuleForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="module\Products\Views\CategoryManagementControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="module\Products\Models\CategoryModels.cs" />
+    <Compile Include="module\Products\Backend\CategoryRepository.cs" />
+    <Compile Include="module\Products\Controllers\CategoryService.cs" />
     
     <!-- Module: Pos -->
     <Compile Include="module\Pos\Models\PosModels.cs" />
@@ -117,6 +124,11 @@
     <Compile Include="module\Promotions\Backend\PromotionBackend.cs" />
     <Compile Include="module\Promotions\Controllers\PromotionController.cs" />
     
+    <!-- Module: Users -->
+    <Compile Include="module\Users\UserManagementModuleControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">

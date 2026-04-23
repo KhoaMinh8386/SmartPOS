@@ -23,6 +23,10 @@ namespace SmartPos.Module.Pos.Views
         private NumericUpDown numPaid;
         private Label lblChange;
         private ComboBox cboPaymentMethod;
+        private TextBox txtVoucher;
+        private Label lblVoucherDiscount;
+        private decimal _voucherDiscountAmount = 0;
+        private VoucherInfo _appliedVoucher = null;
         private Button btnCheckout;
 
         public PosModuleForm()
@@ -107,13 +111,19 @@ namespace SmartPos.Module.Pos.Views
             numPaid = new NumericUpDown { Location = new Point(0, 215), Width = 340, Font = new Font("Segoe UI", 18F, FontStyle.Bold), Maximum = 1000000000, ThousandsSeparator = true };
             numPaid.ValueChanged += (s, e) => CalculateChange();
 
-            var lblChangeText = new Label { Text = "Tien thoi", Location = new Point(0, 270), AutoSize = true };
-            lblChange = new Label { Text = "0", Location = new Point(100, 265), Size = new Size(240, 40), Font = new Font("Segoe UI", 18F, FontStyle.Bold), ForeColor = Color.FromArgb(46, 125, 50), TextAlign = ContentAlignment.MiddleRight };
+            var lblVoucher = new Label { Text = "Ma Voucher", Location = new Point(0, 260), AutoSize = true };
+            txtVoucher = new TextBox { Location = new Point(0, 285), Width = 340, Font = new Font("Segoe UI", 12F) };
+            txtVoucher.KeyDown += TxtVoucher_KeyDown;
+
+            lblVoucherDiscount = new Label { Text = "Giam gia Voucher: 0", Location = new Point(0, 320), AutoSize = true, ForeColor = Color.Blue, Font = new Font("Segoe UI", 10, FontStyle.Bold) };
+
+            var lblChangeText = new Label { Text = "Tien thoi", Location = new Point(0, 360), AutoSize = true };
+            lblChange = new Label { Text = "0", Location = new Point(100, 355), Size = new Size(240, 40), Font = new Font("Segoe UI", 18F, FontStyle.Bold), ForeColor = Color.FromArgb(46, 125, 50), TextAlign = ContentAlignment.MiddleRight };
 
             btnCheckout = new Button { Text = "THANH TOAN (F9)", Dock = DockStyle.Bottom, Height = 80, BackColor = Color.FromArgb(25, 118, 210), ForeColor = Color.White, Font = new Font("Segoe UI", 16F, FontStyle.Bold), FlatStyle = FlatStyle.Flat };
             btnCheckout.Click += BtnCheckout_Click;
 
-            pnlCheckout.Controls.AddRange(new Control[] { lblTotal, lblTotalText, lblPayMethod, cboPaymentMethod, lblPaid, lblChangeText, lblChange, btnCheckout });
+            pnlCheckout.Controls.AddRange(new Control[] { lblTotal, lblTotalText, lblPayMethod, cboPaymentMethod, lblPaid, lblChangeText, lblChange, lblVoucher, txtVoucher, lblVoucherDiscount, btnCheckout });
 
             rightPanel.Controls.Add(lblCustomerName);
             rightPanel.Controls.Add(txtCustomerPhone);
@@ -221,7 +231,33 @@ namespace SmartPos.Module.Pos.Views
 
         private void UpdateTotal()
         {
-            decimal total = _cart.Sum(x => x.SubTotal);
+            decimal subTotal = _cart.Sum(x => x.SubTotal);
+            _voucherDiscountAmount = 0;
+
+            if (_appliedVoucher != null)
+            {
+                if (subTotal >= _appliedVoucher.MinOrderValue)
+                {
+                    if (_appliedVoucher.DiscountType == 1) // %
+                    {
+                        _voucherDiscountAmount = subTotal * (_appliedVoucher.DiscountValue / 100m);
+                        if (_appliedVoucher.MaxDiscount.HasValue && _appliedVoucher.MaxDiscount.Value > 0 && _voucherDiscountAmount > _appliedVoucher.MaxDiscount.Value)
+                        {
+                            _voucherDiscountAmount = _appliedVoucher.MaxDiscount.Value;
+                        }
+                    }
+                    else // Cash
+                    {
+                        _voucherDiscountAmount = _appliedVoucher.DiscountValue;
+                    }
+                }
+            }
+
+            lblVoucherDiscount.Text = $"Giam gia Voucher: -{_voucherDiscountAmount:N0}";
+            
+            decimal total = subTotal - _voucherDiscountAmount;
+            if (total < 0) total = 0;
+
             lblTotal.Text = total.ToString("N0");
             numPaid.Value = total;
             CalculateChange();
@@ -229,9 +265,49 @@ namespace SmartPos.Module.Pos.Views
 
         private void CalculateChange()
         {
-            decimal total = _cart.Sum(x => x.SubTotal);
+            decimal subTotal = _cart.Sum(x => x.SubTotal);
+            decimal total = subTotal - _voucherDiscountAmount;
+            if (total < 0) total = 0;
+
             decimal change = numPaid.Value - total;
             lblChange.Text = change >= 0 ? change.ToString("N0") : "0";
+        }
+
+        private void TxtVoucher_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                string code = txtVoucher.Text.Trim();
+                if (string.IsNullOrEmpty(code))
+                {
+                    _appliedVoucher = null;
+                    UpdateTotal();
+                    return;
+                }
+
+                var voucher = _controller.GetVoucher(code);
+                if (voucher != null)
+                {
+                    if (voucher.AllowStackDiscount)
+                    {
+                        _appliedVoucher = voucher;
+                        MessageBox.Show($"Ap dung Voucher: {voucher.VoucherCode} thanh cong!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        UpdateTotal();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Voucher nay khong ho tro dung chung hoac khong hop le cho don hang nay.", "Loi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        _appliedVoucher = null;
+                        UpdateTotal();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Ma giam gia khong ton tai hoac da het han.", "Loi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    _appliedVoucher = null;
+                    UpdateTotal();
+                }
+            }
         }
 
         private void DgvCart_CellValueChanged(object sender, DataGridViewCellEventArgs e)
@@ -280,9 +356,11 @@ namespace SmartPos.Module.Pos.Views
                 {
                     CustomerID = _currentCustomer?.CustomerID,
                     UserID = UserSession.CurrentUser?.UserID ?? 1,
-                    TotalAmount = _cart.Sum(x => x.SubTotal),
+                    TotalAmount = _cart.Sum(x => x.SubTotal) - _voucherDiscountAmount,
                     PaidAmount = numPaid.Value,
                     PaymentMethod = (byte)(cboPaymentMethod.SelectedIndex + 1),
+                    VoucherCode = _appliedVoucher?.VoucherCode,
+                    VoucherDiscount = _voucherDiscountAmount,
                     Items = _cart
                 };
 
@@ -292,6 +370,10 @@ namespace SmartPos.Module.Pos.Views
                 // Reset POS
                 _cart.Clear();
                 _currentCustomer = null;
+                _appliedVoucher = null;
+                _voucherDiscountAmount = 0;
+                txtVoucher.Clear();
+                lblVoucherDiscount.Text = "Giam gia Voucher: 0";
                 txtCustomerPhone.Clear();
                 lblCustomerName.Text = "Khach le";
                 RefreshCart();

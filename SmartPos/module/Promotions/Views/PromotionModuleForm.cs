@@ -59,8 +59,10 @@ namespace SmartPos.Module.Promotions.Views
         {
             _controller = new PromotionController();
             InitializeUi();
+            CheckPermissions();
             Load += PromotionModuleForm_Load;
         }
+
 
         private void PromotionModuleForm_Load(object sender, EventArgs e)
         {
@@ -656,6 +658,26 @@ namespace SmartPos.Module.Promotions.Views
             public byte Id { get; set; }
             public string Name { get; set; }
             public override string ToString() => Name;
+        }
+
+        private void CheckPermissions()
+        {
+            if (!UserSession.IsAdmin)
+            {
+                // Ẩn hoàn toàn các nút quản trị đối với người không có quyền Admin
+                btnNewVoucher.Visible = false;
+                btnDeleteVoucher.Visible = false;
+                btnSaveVoucher.Visible = false;
+                
+                btnNewSale.Visible = false;
+                btnDeleteSale.Visible = false;
+                btnSaveSale.Visible = false;
+
+                // Hiển thị thông báo chế độ chỉ xem
+                lblError.Text = "CHẾ ĐỘ CHỈ XEM: Bạn không có quyền chỉnh sửa khuyến mãi.";
+                lblError.ForeColor = Color.DarkGoldenrod;
+                lblError.Visible = true;
+            }
         }
     }
 }

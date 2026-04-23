@@ -99,13 +99,14 @@ namespace SmartPos.Module.InventoryAudit.Views
 
             btnApprove = new Button
             {
-                Text = "Duyệt phiếu",
+                Text = UserSession.IsAdmin ? "Duyệt phiếu" : "Chờ Admin duyệt",
                 Location = new Point(765, 11),
                 Size = new Size(100, 30),
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(25, 118, 210),
-                ForeColor = Color.White
+                BackColor = UserSession.IsAdmin ? Color.FromArgb(25, 118, 210) : Color.LightGray,
+                ForeColor = Color.White,
+                Enabled = UserSession.IsAdmin // Khóa ngay từ đầu nếu không phải Admin
             };
             btnApprove.Click += btnApprove_Click;
 
@@ -583,15 +584,19 @@ namespace SmartPos.Module.InventoryAudit.Views
             }
 
             btnSaveCheck.Enabled = editable;
-            btnApprove.Enabled = editable;
-
-            if (!editable)
+            
+            // QUYỀN HẠN: Chỉ Admin mới có quyền Duyệt phiếu
+            if (!UserSession.IsAdmin)
             {
-                btnApprove.Text = "Phiếu đã duyệt";
+                btnApprove.Enabled = false;
+                btnApprove.Text = editable ? "Chờ Admin duyệt" : "Phiếu đã duyệt";
+                btnApprove.BackColor = Color.LightGray;
             }
             else
             {
-                btnApprove.Text = "Duyệt phiếu";
+                btnApprove.Enabled = editable;
+                btnApprove.Text = editable ? "Duyệt phiếu" : "Phiếu đã duyệt";
+                btnApprove.BackColor = editable ? Color.FromArgb(25, 118, 210) : Color.LightGray;
             }
         }
 
