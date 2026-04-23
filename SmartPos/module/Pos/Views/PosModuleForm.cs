@@ -5,6 +5,8 @@ using System.Linq;
 using System.Windows.Forms;
 using SmartPos.Module.Pos.Controllers;
 using SmartPos.Module.Pos.Models;
+using SmartPos.Module.SalesHistory.Backend;
+using SmartPos.Module.SalesHistory.Models;
 
 namespace SmartPos.Module.Pos.Views
 {
@@ -367,6 +369,17 @@ namespace SmartPos.Module.Pos.Views
                 string code = _controller.Checkout(request);
                 MessageBox.Show("Thanh toan thanh cong! Ma HD: " + code, "Thanh cong", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 
+                if (MessageBox.Show("Ban co muon in hoa don khong?", "In hoa don", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    var salesBackend = new SalesBackend();
+                    var detail = salesBackend.GetOrderDetailByCode(code);
+                    if (detail != null)
+                    {
+                        var printer = new SalesPrinter();
+                        printer.PrintInvoice(detail);
+                    }
+                }
+
                 // Reset POS
                 _cart.Clear();
                 _currentCustomer = null;

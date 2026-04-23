@@ -96,6 +96,17 @@
     <Compile Include="module\Pos\Views\InvoiceHistoryForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="module\LichSuBanHang\Models\SalesModels.cs" />
+    <Compile Include="module\LichSuBanHang\Templates\SalesSqlTemplate.cs" />
+    <Compile Include="module\LichSuBanHang\Backend\SalesBackend.cs" />
+    <Compile Include="module\LichSuBanHang\Backend\SalesPrinter.cs" />
+    <Compile Include="module\LichSuBanHang\Controllers\SalesController.cs" />
+    <Compile Include="module\LichSuBanHang\Views\frmOrderManagement.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="module\LichSuBanHang\Views\frmOrderDetail.cs">
+      <SubType>Form</SubType>
+    </Compile>
     
     <!-- Module: PurchaseOrders -->
     <Compile Include="module\PurchaseOrders\Views\PurchaseOrderModuleForm.cs">
