@@ -7,3 +7,13 @@ C:\Users\Admin\Projects\SmartPos\SmartPos\obj\Debug\SmartPos.csproj.GenerateReso
 C:\Users\Admin\Projects\SmartPos\SmartPos\obj\Debug\SmartPos.csproj.CoreCompileInputs.cache
 C:\Users\Admin\Projects\SmartPos\SmartPos\obj\Debug\SmartPos.exe
 C:\Users\Admin\Projects\SmartPos\SmartPos\obj\Debug\SmartPos.pdb
+C:\New folder (6)\SmartPOS\SmartPos\bin\Debug\SmartPos.exe.config
+C:\New folder (6)\SmartPOS\SmartPos\bin\Debug\SmartPos.exe
+C:\New folder (6)\SmartPOS\SmartPos\bin\Debug\SmartPos.pdb
+C:\New folder (6)\SmartPOS\SmartPos\obj\Debug\SmartPos.csproj.AssemblyReference.cache
+C:\New folder (6)\SmartPOS\SmartPos\obj\Debug\SmartPos.exe.config
+C:\New folder (6)\SmartPOS\SmartPos\obj\Debug\SmartPos.Properties.Resources.resources
+C:\New folder (6)\SmartPOS\SmartPos\obj\Debug\SmartPos.csproj.GenerateResource.cache
+C:\New folder (6)\SmartPOS\SmartPos\obj\Debug\SmartPos.csproj.CoreCompileInputs.cache
+C:\New folder (6)\SmartPOS\SmartPos\obj\Debug\SmartPos.exe
+C:\New folder (6)\SmartPOS\SmartPos\obj\Debug\SmartPos.pdb

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -53,36 +53,6 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="MainForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="module\Suppliers\Views\SupplierModuleForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="module\Suppliers\Models\SupplierModels.cs" />
-    <Compile Include="module\Suppliers\Templates\SupplierSqlTemplate.cs" />
-    <Compile Include="module\Suppliers\Backend\SupplierBackend.cs" />
-    <Compile Include="module\Suppliers\Controllers\SupplierController.cs" />
-    <Compile Include="module\Products\Models\ProductModels.cs" />
-    <Compile Include="module\Products\Templates\ProductSqlTemplate.cs" />
-    <Compile Include="module\Products\Backend\ProductBackend.cs" />
-    <Compile Include="module\Products\Controllers\ProductController.cs" />
-    <Compile Include="module\Products\Views\ProductModuleForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="module\Products\Views\CategoryModuleForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="module\Pos\Models\PosModels.cs" />
-    <Compile Include="module\Pos\Templates\PosSqlTemplate.cs" />
-    <Compile Include="module\Pos\Backend\PosBackend.cs" />
-    <Compile Include="module\Pos\Controllers\PosController.cs" />
-    <Compile Include="module\Pos\Views\PosModuleForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="module\Pos\Views\InvoiceHistoryForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -103,7 +73,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="UserSession.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

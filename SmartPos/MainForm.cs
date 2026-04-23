@@ -2,6 +2,8 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using SmartPos.Module.Suppliers.Views;
+using SmartPos.Module.Products.Views;
+using SmartPos.Module.Pos.Views;
 
 namespace SmartPos
 {
@@ -11,6 +13,9 @@ namespace SmartPos
         private Label lblUser;
         private Button btnLogout;
         private Button btnSuppliers;
+        private Button btnProducts;
+        private Button btnPos;
+        private Button btnInvoices;
 
         public MainForm()
         {
@@ -36,6 +41,9 @@ namespace SmartPos
             lblUser = new Label();
             btnLogout = new Button();
             btnSuppliers = new Button();
+            btnProducts = new Button();
+            btnPos = new Button();
+            btnInvoices = new Button();
 
             SuspendLayout();
 
@@ -64,10 +72,34 @@ namespace SmartPos
             btnSuppliers.Location = new Point(165, 120);
             btnSuppliers.Click += btnSuppliers_Click;
 
+            btnProducts.Text = "Quan ly San pham";
+            btnProducts.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            btnProducts.Size = new Size(220, 36);
+            btnProducts.Location = new Point(400, 120);
+            btnProducts.Click += btnProducts_Click;
+
+            btnPos.Text = "POS BAN HANG";
+            btnPos.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            btnPos.Size = new Size(250, 60);
+            btnPos.Location = new Point(30, 180);
+            btnPos.BackColor = Color.FromArgb(46, 125, 50);
+            btnPos.ForeColor = Color.White;
+            btnPos.FlatStyle = FlatStyle.Flat;
+            btnPos.Click += btnPos_Click;
+
+            btnInvoices.Text = "Lich su Hoa don";
+            btnInvoices.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            btnInvoices.Size = new Size(220, 36);
+            btnInvoices.Location = new Point(300, 195);
+            btnInvoices.Click += btnInvoices_Click;
+
             Controls.Add(lblWelcome);
             Controls.Add(lblUser);
             Controls.Add(btnLogout);
             Controls.Add(btnSuppliers);
+            Controls.Add(btnProducts);
+            Controls.Add(btnPos);
+            Controls.Add(btnInvoices);
 
             ResumeLayout(false);
             PerformLayout();
@@ -84,6 +116,30 @@ namespace SmartPos
             using (var supplierModule = new SupplierModuleForm())
             {
                 supplierModule.ShowDialog(this);
+            }
+        }
+
+        private void btnProducts_Click(object sender, EventArgs e)
+        {
+            using (var productModule = new ProductModuleForm())
+            {
+                productModule.ShowDialog(this);
+            }
+        }
+
+        private void btnPos_Click(object sender, EventArgs e)
+        {
+            using (var posModule = new PosModuleForm())
+            {
+                posModule.ShowDialog(this);
+            }
+        }
+
+        private void btnInvoices_Click(object sender, EventArgs e)
+        {
+            using (var historyForm = new InvoiceHistoryForm())
+            {
+                historyForm.ShowDialog(this);
             }
         }
     }
