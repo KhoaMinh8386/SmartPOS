@@ -1,39 +1,105 @@
-﻿using System;
+using System;
 using System.Configuration;
+using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
-using Microsoft.Win32;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace SmartPos
 {
     public partial class Form1 : Form
     {
         private const string RegistryPath = @"Software\SmartPos";
+        private Button btnTogglePassword;
+        private bool isPasswordHidden = true;
 
         public Form1()
         {
             InitializeComponent();
+            EnsureDatabaseSchema(); // Tự động sửa lỗi thiếu cột
+            SetupCustomControls();
             this.Load += Form1_Load;
             this.Shown += Form1_Shown;
             this.AcceptButton = btnLogin;
         }
 
+        private void SetupCustomControls()
+        {
+            // Nút toggle password
+            btnTogglePassword = new Button();
+            btnTogglePassword.Size = new Size(25, 25);
+            btnTogglePassword.Location = new Point(txtPassword.Width - 30, 0);
+            btnTogglePassword.Cursor = Cursors.Hand;
+            btnTogglePassword.FlatStyle = FlatStyle.Flat;
+            btnTogglePassword.FlatAppearance.BorderSize = 0;
+            btnTogglePassword.BackColor = Color.White;
+            btnTogglePassword.Text = "👁";
+            btnTogglePassword.Font = new Font("Segoe UI", 8);
+            btnTogglePassword.Click += BtnTogglePassword_Click;
+            txtPassword.Controls.Add(btnTogglePassword);
+        }
+
+        private void BtnTogglePassword_Click(object sender, EventArgs e)
+        {
+            isPasswordHidden = !isPasswordHidden;
+            txtPassword.UseSystemPasswordChar = isPasswordHidden;
+            btnTogglePassword.Text = isPasswordHidden ? "👁" : "🔒";
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
+            EnsureDatabaseSchema();
             BuildLogo();
             LoadRememberedLogin();
+            txtPassword.UseSystemPasswordChar = true;
+        }
+
+        private void EnsureDatabaseSchema()
+        {
+            string connectionString = ConfigurationManager.ConnectionStrings["SmartPosDb"]?.ConnectionString;
+            if (string.IsNullOrWhiteSpace(connectionString)) return;
+
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    // Thêm từng cột một để đảm bảo thành công
+                    string[] sqls = new string[] {
+                        "IF COL_LENGTH('dbo.Users', 'RoleID') IS NULL ALTER TABLE dbo.Users ADD RoleID INT NOT NULL DEFAULT 3;",
+                        "IF COL_LENGTH('dbo.Users', 'FailedAttempts') IS NULL ALTER TABLE dbo.Users ADD FailedAttempts INT NOT NULL DEFAULT 0;",
+                        "IF COL_LENGTH('dbo.Users', 'LockoutEnd') IS NULL ALTER TABLE dbo.Users ADD LockoutEnd DATETIME NULL;",
+                        "IF COL_LENGTH('dbo.Users', 'IsActive') IS NULL ALTER TABLE dbo.Users ADD IsActive BIT NOT NULL DEFAULT 1;",
+                        "IF COL_LENGTH('dbo.Invoices', 'VoucherCode') IS NULL ALTER TABLE dbo.Invoices ADD VoucherCode NVARCHAR(50) NULL;",
+                        "IF COL_LENGTH('dbo.Invoices', 'VoucherDiscount') IS NULL ALTER TABLE dbo.Invoices ADD VoucherDiscount DECIMAL(18,2) NOT NULL DEFAULT 0;",
+                        "IF COL_LENGTH('dbo.Invoices', 'SubTotal') IS NULL ALTER TABLE dbo.Invoices ADD SubTotal DECIMAL(18,2) NOT NULL DEFAULT 0;"
+                    };
+                    
+                    foreach(var sql in sqls)
+                    {
+                        using (SqlCommand cmd = new SqlCommand(sql, conn))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) 
+            { 
+                // Ghi log lỗi nếu cần, nhưng không chặn ứng dụng khởi động
+                Console.WriteLine("Lỗi cập nhật DB: " + ex.Message);
+            }
         }
 
         private void Form1_Shown(object sender, EventArgs e)
         {
             txtUsername.Focus();
-            txtUsername.SelectAll();
         }
 
         private void btnLogin_Click(object sender, EventArgs e)
@@ -51,106 +117,110 @@ namespace SmartPos
             string loginInput = txtUsername.Text.Trim();
             string passwordInput = txtPassword.Text;
 
-            if (string.IsNullOrWhiteSpace(loginInput))
+            if (string.IsNullOrWhiteSpace(loginInput) || string.IsNullOrWhiteSpace(passwordInput))
             {
-                ShowError("Vui long nhap Username hoac Email.");
-                txtUsername.Focus();
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(passwordInput))
-            {
-                ShowError("Vui long nhap Password.");
-                txtPassword.Focus();
+                ShowError("Vui lòng nhập đầy đủ tài khoản và mật khẩu.");
                 return;
             }
 
             string connectionString = ConfigurationManager.ConnectionStrings["SmartPosDb"]?.ConnectionString;
-
             if (string.IsNullOrWhiteSpace(connectionString))
             {
-                ShowError("Chua cau hinh SmartPosDb trong App.config.");
+                ShowError("Chưa cấu hình kết nối Database.");
                 return;
             }
 
             btnLogin.Enabled = false;
-
             try
             {
-                int userId;
-                int roleId;
-                string username;
-                string fullName;
-                string storedPassword;
-
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    connection.Open();
+                    conn.Open();
 
-                    const string query = @"
-                                                SELECT TOP 1 UserID, RoleID, Username, FullName, PasswordHash
-                        FROM dbo.Users
-                        WHERE IsActive = 1
-                          AND (Username = @Login OR Email = @Login);";
+                    // 1. Kiểm tra tài khoản và trạng thái Lockout
+                    const string checkQuery = @"
+                        SELECT UserID, PasswordHash, RoleID, FullName, Username, FailedAttempts, LockoutEnd, IsActive
+                        FROM dbo.Users 
+                        WHERE Username = @Login OR Email = @Login";
 
-                    using (SqlCommand command = new SqlCommand(query, connection))
+                    DataRow userRow = null;
+                    using (SqlCommand cmd = new SqlCommand(checkQuery, conn))
                     {
-                        command.Parameters.AddWithValue("@Login", loginInput);
-
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        cmd.Parameters.AddWithValue("@Login", loginInput);
+                        using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
                         {
-                            if (!reader.Read())
-                            {
-                                ShowError("Sai tài khoản hoặc mật khẩu");
-                                return;
-                            }
-
-                            userId = Convert.ToInt32(reader["UserID"]);
-                            roleId = Convert.ToInt32(reader["RoleID"]);
-                            username = reader["Username"] as string ?? loginInput;
-                            fullName = reader["FullName"] as string ?? string.Empty;
-                            storedPassword = reader["PasswordHash"] as string ?? string.Empty;
+                            DataTable dt = new DataTable();
+                            adapter.Fill(dt);
+                            if (dt.Rows.Count > 0) userRow = dt.Rows[0];
                         }
                     }
-                }
 
-                if (!IsPasswordValid(storedPassword, passwordInput))
-                {
-                    ShowError("Sai tài khoản hoặc mật khẩu");
-                    return;
-                }
+                    if (userRow == null)
+                    {
+                        ShowError("Tài khoản không tồn tại hoặc đã bị ngừng hoạt động.");
+                        return;
+                    }
 
-                UserSession.CurrentUser = new UserSessionInfo
-                {
-                    UserID = userId,
-                    RoleID = roleId,
-                    Username = username,
-                    FullName = fullName
-                };
+                    int userId = (int)userRow["UserID"];
+                    bool isActive = (bool)userRow["IsActive"];
+                    int failedAttempts = (int)userRow["FailedAttempts"];
+                    DateTime? lockoutEnd = userRow["LockoutEnd"] as DateTime?;
 
-                SaveRememberedLogin();
-                lblError.Visible = false;
+                    if (!isActive)
+                    {
+                        ShowError("Tài khoản này đã bị vô hiệu hóa.");
+                        return;
+                    }
 
-                Hide();
-                using (MainForm mainForm = new MainForm())
-                {
-                    mainForm.ShowDialog(this);
-                }
+                    // Kiểm tra Lockout
+                    if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.Now)
+                    {
+                        TimeSpan remaining = lockoutEnd.Value - DateTime.Now;
+                        ShowError($"Tài khoản đang bị khóa. Thử lại sau {Math.Ceiling(remaining.TotalMinutes)} phút.");
+                        return;
+                    }
 
-                if (!UserSession.IsLoggedIn)
-                {
-                    txtPassword.Clear();
-                    Show();
-                    txtUsername.Focus();
-                }
-                else
-                {
-                    Close();
+                    string storedHash = userRow["PasswordHash"].ToString();
+                    string inputHash = HashSHA256(passwordInput);
+
+                    // Xác thực mật khẩu theo chuẩn SHA256
+                    bool isPasswordCorrect = (inputHash.Equals(storedHash, StringComparison.OrdinalIgnoreCase)) 
+                                          || (passwordInput == storedHash); // Hỗ trợ cả plaintext nếu có
+
+                    if (isPasswordCorrect)
+
+                    // 2. Xác thực mật khẩu
+                    if (isPasswordCorrect)
+                    {
+                        // Thành công -> Reset FailedAttempts
+                        ResetFailedAttempts(userId, conn);
+
+                        UserSession.CurrentUser = new UserSessionInfo
+                        {
+                            UserID = userId,
+                            RoleID = (int)userRow["RoleID"],
+                            Username = userRow["Username"].ToString(),
+                            FullName = userRow["FullName"].ToString()
+                        };
+
+                        SaveRememberedLogin();
+                        this.Hide();
+                        using (MainForm main = new MainForm())
+                        {
+                            main.ShowDialog();
+                        }
+                        this.Close();
+                    }
+                    else
+                    {
+                        // Thất bại -> Tăng FailedAttempts
+                        HandleFailedLogin(userId, failedAttempts, conn);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                ShowError("Khong the ket noi database. Chi tiet: " + ex.Message);
+                ShowError("Lỗi hệ thống: " + ex.Message);
             }
             finally
             {
@@ -158,88 +228,84 @@ namespace SmartPos
             }
         }
 
-        private bool IsPasswordValid(string storedPassword, string passwordInput)
+        private void HandleFailedLogin(int userId, int currentFailures, SqlConnection conn)
         {
-            if (string.IsNullOrWhiteSpace(storedPassword) || string.IsNullOrWhiteSpace(passwordInput))
+            int newFailures = currentFailures + 1;
+            DateTime? lockoutUntil = null;
+
+            if (newFailures >= 5)
             {
-                return false;
+                lockoutUntil = DateTime.Now.AddMinutes(5);
+                ShowError("Nhập sai quá 5 lần. Tài khoản bị khóa 5 phút.");
+            }
+            else
+            {
+                ShowError($"Sai mật khẩu. Bạn còn {5 - newFailures} lần thử.");
             }
 
-            // BCrypt hash starts with $2a/$2b/$2y. Verify via BCrypt.Net if installed.
-            if (storedPassword.StartsWith("$2", StringComparison.Ordinal))
+            const string updateQuery = "UPDATE dbo.Users SET FailedAttempts = @Fail, LockoutEnd = @Lock WHERE UserID = @ID";
+            using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+            {
+                cmd.Parameters.AddWithValue("@Fail", newFailures);
+                cmd.Parameters.AddWithValue("@Lock", (object)lockoutUntil ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@ID", userId);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void ResetFailedAttempts(int userId, SqlConnection conn)
+        {
+            const string query = "UPDATE dbo.Users SET FailedAttempts = 0, LockoutEnd = NULL WHERE UserID = @ID";
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@ID", userId);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private bool IsPasswordValid(string storedPassword, string passwordInput)
+        {
+            if (string.IsNullOrWhiteSpace(storedPassword)) return false;
+
+            // Kiểm tra BCrypt hash (thường bắt đầu bằng $2)
+            if (storedPassword.StartsWith("$2"))
             {
                 return VerifyBcrypt(storedPassword, passwordInput);
             }
 
-            // SHA256 (hex 64 chars)
-            if (storedPassword.Length == 64 && IsHexString(storedPassword))
-            {
-                string inputHash = ComputeSha256(passwordInput);
-                return string.Equals(storedPassword, inputHash, StringComparison.OrdinalIgnoreCase);
-            }
+            // Fallback plain text cho development
+            return storedPassword == passwordInput;
+        }
 
-            // Backward compatibility for plain-text seeds in development data.
-            if (string.Equals(storedPassword, passwordInput, StringComparison.Ordinal))
+        private bool VerifyBcrypt(string hashedPassword, string plainPassword)
+        {
+            try
             {
-                return true;
+                // Thử dùng BCrypt.Net qua reflection nếu có
+                Type bcryptType = Type.GetType("BCrypt.Net.BCrypt, BCrypt.Net-Next") ?? Type.GetType("BCrypt.Net.BCrypt, BCrypt.Net");
+                if (bcryptType != null)
+                {
+                    var method = bcryptType.GetMethod("Verify", new[] { typeof(string), typeof(string) });
+                    return (bool)method.Invoke(null, new object[] { plainPassword, hashedPassword });
+                }
             }
-
+            catch { }
             return false;
         }
 
-        private static string ComputeSha256(string value)
+        private string HashSHA256(string text)
         {
-            using (SHA256 sha = SHA256.Create())
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+            using (var sha256 = SHA256.Create())
             {
-                byte[] inputBytes = Encoding.UTF8.GetBytes(value);
-                byte[] hashBytes = sha.ComputeHash(inputBytes);
-                StringBuilder builder = new StringBuilder(hashBytes.Length * 2);
-
-                foreach (byte b in hashBytes)
+                byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(text));
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
                 {
-                    builder.Append(b.ToString("x2", CultureInfo.InvariantCulture));
+                    builder.Append(bytes[i].ToString("x2"));
                 }
-
                 return builder.ToString();
             }
-        }
-
-        private static bool IsHexString(string value)
-        {
-            foreach (char c in value)
-            {
-                bool isHex =
-                    (c >= '0' && c <= '9') ||
-                    (c >= 'a' && c <= 'f') ||
-                    (c >= 'A' && c <= 'F');
-
-                if (!isHex)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private static bool VerifyBcrypt(string hashedPassword, string plainPassword)
-        {
-            Type bcryptType = Type.GetType("BCrypt.Net.BCrypt, BCrypt.Net-Next")
-                ?? Type.GetType("BCrypt.Net.BCrypt, BCrypt.Net");
-
-            if (bcryptType == null)
-            {
-                return false;
-            }
-
-            MethodInfo verifyMethod = bcryptType.GetMethod("Verify", new[] { typeof(string), typeof(string) });
-            if (verifyMethod == null)
-            {
-                return false;
-            }
-
-            object result = verifyMethod.Invoke(null, new object[] { plainPassword, hashedPassword });
-            return result is bool && (bool)result;
         }
 
         private void ShowError(string message)
@@ -252,18 +318,10 @@ namespace SmartPos
         {
             using (RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryPath))
             {
-                if (key == null)
+                if (key != null)
                 {
-                    return;
-                }
-
-                string rememberValue = Convert.ToString(key.GetValue("RememberLogin", "0"));
-                string usernameValue = Convert.ToString(key.GetValue("Username", string.Empty));
-
-                chkRemember.Checked = rememberValue == "1";
-                if (chkRemember.Checked)
-                {
-                    txtUsername.Text = usernameValue;
+                    chkRemember.Checked = Convert.ToString(key.GetValue("RememberLogin", "0")) == "1";
+                    if (chkRemember.Checked) txtUsername.Text = Convert.ToString(key.GetValue("Username", ""));
                 }
             }
         }
@@ -272,57 +330,32 @@ namespace SmartPos
         {
             using (RegistryKey key = Registry.CurrentUser.CreateSubKey(RegistryPath))
             {
-                if (key == null)
+                if (key != null)
                 {
-                    return;
-                }
-
-                if (chkRemember.Checked)
-                {
-                    key.SetValue("RememberLogin", "1");
-                    key.SetValue("Username", txtUsername.Text.Trim());
-                }
-                else
-                {
-                    key.SetValue("RememberLogin", "0");
-                    key.DeleteValue("Username", false);
+                    key.SetValue("RememberLogin", chkRemember.Checked ? "1" : "0");
+                    if (chkRemember.Checked) key.SetValue("Username", txtUsername.Text.Trim());
                 }
             }
         }
 
         private void BuildLogo()
         {
-            Bitmap bitmap = new Bitmap(pictureBoxLogo.Width, pictureBoxLogo.Height);
-
-            using (Graphics graphics = Graphics.FromImage(bitmap))
+            Bitmap bmp = new Bitmap(pictureBoxLogo.Width, pictureBoxLogo.Height);
+            using (Graphics g = Graphics.FromImage(bmp))
             {
-                graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                graphics.Clear(Color.Transparent);
-
-                Rectangle outer = new Rectangle(20, 5, 60, 50);
-                using (Brush brush = new SolidBrush(Color.FromArgb(25, 118, 210)))
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+                Rectangle rect = new Rectangle(20, 5, 60, 50);
+                using (LinearGradientBrush brush = new LinearGradientBrush(rect, Color.FromArgb(33, 150, 243), Color.FromArgb(21, 101, 192), 45f))
                 {
-                    graphics.FillEllipse(brush, outer);
+                    g.FillEllipse(brush, rect);
                 }
-
-                using (Font font = new Font("Segoe UI", 12f, FontStyle.Bold))
-                using (Brush textBrush = new SolidBrush(Color.White))
+                using (Font f = new Font("Segoe UI", 12, FontStyle.Bold))
                 {
-                    StringFormat format = new StringFormat
-                    {
-                        Alignment = StringAlignment.Center,
-                        LineAlignment = StringAlignment.Center
-                    };
-                    graphics.DrawString("POS", font, textBrush, outer, format);
+                    g.DrawString("POS", f, Brushes.White, rect, new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
                 }
             }
-
-            if (pictureBoxLogo.Image != null)
-            {
-                pictureBoxLogo.Image.Dispose();
-            }
-
-            pictureBoxLogo.Image = bitmap;
+            pictureBoxLogo.Image = bmp;
         }
     }
 }

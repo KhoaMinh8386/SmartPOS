@@ -58,6 +58,29 @@ namespace SmartPos.Module.Pos.Models
         public decimal PaidAmount { get; set; }
         public byte PaymentMethod { get; set; }
         public string Note { get; set; }
+        public string VoucherCode { get; set; }
+        public decimal VoucherDiscount { get; set; }
         public List<CartItem> Items { get; set; }
+    }
+
+    public class ProductSaleInfo
+    {
+        public int SaleID { get; set; }
+        public int ProductID { get; set; }
+        public byte DiscountType { get; set; } // 1: %, 2: Cash
+        public decimal DiscountValue { get; set; }
+        public decimal? SalePrice { get; set; }
+        public bool AllowStackVoucher { get; set; }
+    }
+
+    public class VoucherInfo
+    {
+        public int VoucherID { get; set; }
+        public string VoucherCode { get; set; }
+        public byte DiscountType { get; set; } // 1: %, 2: Cash
+        public decimal DiscountValue { get; set; }
+        public decimal MinOrderValue { get; set; }
+        public decimal? MaxDiscount { get; set; }
+        public bool AllowStackDiscount { get; set; }
     }
 }

@@ -24,10 +24,10 @@ SELECT SCOPE_IDENTITY();";
         public const string InsertInvoice = @"
 INSERT INTO dbo.Invoices (
     InvoiceCode, CustomerID, CashierUserID, WarehouseID, SubTotal, TotalAmount, DiscountAmount, 
-    PaidAmount, PaymentMethod, Status, Notes, InvoiceDate
+    PaidAmount, PaymentMethod, Status, Notes, VoucherCode, VoucherDiscount, InvoiceDate
 ) VALUES (
-    @InvoiceCode, @CustomerID, @UserID, @WarehouseID, @TotalAmount, @TotalAmount, 0, 
-    @PaidAmount, @PaymentMethod, 1, @Note, GETDATE()
+    @InvoiceCode, @CustomerID, @UserID, @WarehouseID, @SubTotal, @TotalAmount, @VoucherDiscount, 
+    @PaidAmount, @PaymentMethod, 1, @Note, @VoucherCode, @VoucherDiscount, GETDATE()
 );
 SELECT SCOPE_IDENTITY();";
 

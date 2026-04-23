@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using SmartPos.Module.Pos.Models;
 using SmartPos.Module.Pos.Templates;
 
@@ -23,9 +24,20 @@ namespace SmartPos.Module.Pos.Backend
             using (SqlConnection conn = new SqlConnection(_connectionString))
             using (SqlCommand cmd = new SqlCommand(@"
 SELECT TOP 10 
-    p.ProductID, p.ProductCode, p.ProductName, p.RetailPrice, p.BaseUnitID, u.UnitName
+    p.ProductID, p.ProductCode, p.ProductName, p.RetailPrice, p.BaseUnitID, u.UnitName,
+    ISNULL(ps.SaleID, 0) as SaleID,
+    CASE 
+        WHEN ps.SaleID IS NULL THEN p.RetailPrice
+        WHEN ps.SalePrice > 0 THEN ps.SalePrice
+        WHEN ps.DiscountType = 1 THEN p.RetailPrice * (1 - ps.DiscountValue / 100)
+        WHEN ps.DiscountType = 2 THEN p.RetailPrice - ps.DiscountValue
+        ELSE p.RetailPrice
+    END as FinalPrice
 FROM dbo.Products p
 LEFT JOIN dbo.Units u ON p.BaseUnitID = u.UnitID
+LEFT JOIN dbo.ProductSales ps ON p.ProductID = ps.ProductID 
+    AND ps.IsActive = 1 
+    AND (GETDATE() >= ps.StartDate AND GETDATE() <= ps.EndDate)
 WHERE p.IsActive = 1 
   AND (p.ProductCode = @Term OR p.Barcode = @Term OR p.ProductName LIKE @SearchTerm)
 ORDER BY p.ProductName;", conn))
@@ -42,7 +54,7 @@ ORDER BY p.ProductName;", conn))
                             ProductID = (int)rdr["ProductID"],
                             ProductCode = rdr["ProductCode"].ToString(),
                             ProductName = rdr["ProductName"].ToString(),
-                            UnitPrice = (decimal)rdr["RetailPrice"],
+                            UnitPrice = (decimal)rdr["FinalPrice"],
                             UnitID = (int)rdr["BaseUnitID"],
                             UnitName = rdr["UnitName"]?.ToString() ?? "Cai",
                             Quantity = 1
@@ -116,7 +128,10 @@ ORDER BY p.ProductName;", conn))
                             cmdInv.Parameters.AddWithValue("@CustomerID", (object)request.CustomerID ?? DBNull.Value);
                             cmdInv.Parameters.AddWithValue("@UserID", request.UserID);
                             cmdInv.Parameters.AddWithValue("@WarehouseID", 1); // Default to main warehouse
+                            cmdInv.Parameters.AddWithValue("@SubTotal", request.Items.Sum(x => x.SubTotal));
                             cmdInv.Parameters.AddWithValue("@TotalAmount", request.TotalAmount);
+                            cmdInv.Parameters.AddWithValue("@VoucherDiscount", request.VoucherDiscount);
+                            cmdInv.Parameters.AddWithValue("@VoucherCode", request.VoucherCode ?? (object)DBNull.Value);
                             cmdInv.Parameters.AddWithValue("@PaidAmount", request.PaidAmount);
                             cmdInv.Parameters.AddWithValue("@PaymentMethod", request.PaymentMethod);
                             cmdInv.Parameters.AddWithValue("@Note", request.Note ?? (object)DBNull.Value);
@@ -232,6 +247,35 @@ ORDER BY p.ProductName;", conn))
                 }
             }
             return detail;
+        }
+        public VoucherInfo GetVoucher(string code)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            using (SqlCommand cmd = new SqlCommand(@"
+SELECT VoucherID, VoucherCode, DiscountType, DiscountValue, MinOrderValue, MaxDiscount, AllowStackDiscount
+FROM dbo.Vouchers
+WHERE VoucherCode = @Code AND IsActive = 1 AND (GETDATE() >= StartDate AND GETDATE() <= EndDate)", conn))
+            {
+                cmd.Parameters.AddWithValue("@Code", code);
+                conn.Open();
+                using (SqlDataReader rdr = cmd.ExecuteReader())
+                {
+                    if (rdr.Read())
+                    {
+                        return new VoucherInfo
+                        {
+                            VoucherID = (int)rdr["VoucherID"],
+                            VoucherCode = rdr["VoucherCode"].ToString(),
+                            DiscountType = (byte)rdr["DiscountType"],
+                            DiscountValue = (decimal)rdr["DiscountValue"],
+                            MinOrderValue = (decimal)rdr["MinOrderValue"],
+                            MaxDiscount = rdr["MaxDiscount"] as decimal?,
+                            AllowStackDiscount = (bool)rdr["AllowStackDiscount"]
+                        };
+                    }
+                }
+            }
+            return null;
         }
     }
 }

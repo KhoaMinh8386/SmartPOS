@@ -75,7 +75,16 @@ namespace SmartPos.Module.Products.Views
 
             btnManageCategories = new Button { Text = "Categories", Location = new Point(620, 12), Size = new Size(100, 32) };
             btnManageCategories.Click += (s, e) => {
-                using (var f = new CategoryModuleForm()) f.ShowDialog(this);
+                using (var f = new Form())
+                {
+                    f.Text = "Quản lý danh mục đa cấp";
+                    f.Size = new Size(1000, 700);
+                    f.StartPosition = FormStartPosition.CenterParent;
+                    var ctrl = new CategoryManagementControl();
+                    ctrl.Dock = DockStyle.Fill;
+                    f.Controls.Add(ctrl);
+                    f.ShowDialog(this);
+                }
                 LoadData();
             };
 
@@ -90,7 +99,12 @@ namespace SmartPos.Module.Products.Views
                 BackgroundColor = Color.White,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
             };
-            dgvProducts.DoubleClick += (s, e) => { if (dgvProducts.CurrentRow != null) ShowEditor(((ProductListItem)dgvProducts.CurrentRow.DataBoundItem).ProductID); };
+            dgvProducts.DoubleClick += (s, e) => { 
+                if (dgvProducts.CurrentRow != null && UserSession.IsAdmin) 
+                    ShowEditor(((ProductListItem)dgvProducts.CurrentRow.DataBoundItem).ProductID); 
+                else if (dgvProducts.CurrentRow != null)
+                    ShowEditor(((ProductListItem)dgvProducts.CurrentRow.DataBoundItem).ProductID); // Vẫn cho mở để xem detail nhưng Editor sẽ bị disable
+            };
 
             leftPanel.Controls.Add(dgvProducts);
             leftPanel.Controls.Add(searchPanel);
@@ -164,18 +178,29 @@ namespace SmartPos.Module.Products.Views
 
         private void ApplySecurity()
         {
-            bool isAdmin = UserSession.CurrentUser != null && UserSession.CurrentUser.RoleID == 1;
+            bool isAdmin = UserSession.IsAdmin;
+            
             btnAdd.Visible = isAdmin;
             btnManageCategories.Visible = isAdmin;
-            btnSave.Enabled = isAdmin;
-            btnDelete.Visible = isAdmin;
+            btnSave.Visible = isAdmin; // Ẩn luôn nút Lưu
+            btnDelete.Visible = isAdmin; // Ẩn luôn nút Xóa
             
             if (!isAdmin)
             {
-                lblEditorTitle.Text = "Product Details (View Only)";
-                // Disable all inputs
-                foreach (Control c in pnlEditor.Controls) if (c is FlowLayoutPanel flp) foreach (Control ctrl in flp.Controls) ctrl.Enabled = false;
-                btnCancel.Enabled = true; // Still allow cancel/close
+                lblEditorTitle.Text = "Chi tiết sản phẩm (Chế độ Xem)";
+                // Vô hiệu hóa toàn bộ panel nhập liệu
+                pnlEditor.Enabled = true; // Panel chính mở để thấy thông tin
+                foreach (Control c in pnlEditor.Controls) 
+                {
+                    if (c is FlowLayoutPanel flp) 
+                    {
+                        foreach (Control ctrl in flp.Controls) 
+                        {
+                            // Chỉ cho phép nút Cancel hoạt động
+                            if (ctrl.Text != "Cancel") ctrl.Enabled = false;
+                        }
+                    }
+                }
             }
         }
 
@@ -224,7 +249,7 @@ namespace SmartPos.Module.Products.Views
         {
             _currentProductId = productId;
             pnlEditor.Visible = true;
-            btnDelete.Visible = productId > 0 && UserSession.CurrentUser.RoleID == 1;
+            btnDelete.Visible = productId > 0 && UserSession.IsAdmin;
 
             if (productId == 0)
             {

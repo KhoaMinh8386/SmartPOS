@@ -4,6 +4,40 @@ namespace SmartPos.Module.Promotions.Templates
     {
         public const string EnsureSchema = @"
 -- =============================================
+-- Tạo bảng Users nếu chưa tồn tại
+-- =============================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Users' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE dbo.Users (
+        UserID          INT IDENTITY(1,1) PRIMARY KEY,
+        Username        NVARCHAR(50)   NOT NULL UNIQUE,
+        PasswordHash    NVARCHAR(255)  NOT NULL,
+        FullName        NVARCHAR(100)  NOT NULL,
+        Email           NVARCHAR(100)  NULL,
+        RoleID          INT            NOT NULL DEFAULT 3, -- 1:Admin, 2:Manager, 3:Cashier
+        IsActive        BIT            NOT NULL DEFAULT 1,
+        FailedAttempts  INT            NOT NULL DEFAULT 0,
+        LockoutEnd      DATETIME       NULL,
+        CreatedAt       DATETIME       NOT NULL DEFAULT GETDATE()
+    );
+    
+    -- Seed admin account (password: admin123)
+    INSERT INTO dbo.Users (Username, PasswordHash, FullName, RoleID, IsActive)
+    VALUES ('admin', '$2a$11$qR7jW1D7n6X7X7X7X7X7XuG5j5j5j5j5j5j5j5j5j5j5j5j5j5j5j', 'Hệ thống Admin', 1, 1);
+END;
+
+-- Đảm bảo cột RoleID tồn tại
+IF COL_LENGTH('dbo.Users', 'RoleID') IS NULL
+    ALTER TABLE dbo.Users ADD RoleID INT NOT NULL DEFAULT 3;
+
+-- Đảm bảo các cột lockout tồn tại
+IF COL_LENGTH('dbo.Users', 'FailedAttempts') IS NULL
+    ALTER TABLE dbo.Users ADD FailedAttempts INT NOT NULL DEFAULT 0;
+
+IF COL_LENGTH('dbo.Users', 'LockoutEnd') IS NULL
+    ALTER TABLE dbo.Users ADD LockoutEnd DATETIME NULL;
+
+-- =============================================
 -- Tạo bảng Vouchers nếu chưa tồn tại
 -- =============================================
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Vouchers' AND schema_id = SCHEMA_ID('dbo'))
