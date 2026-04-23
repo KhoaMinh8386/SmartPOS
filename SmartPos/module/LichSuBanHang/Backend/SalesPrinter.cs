@@ -56,7 +56,7 @@ namespace SmartPos.Module.SalesHistory.Backend
             y += 18;
             g.DrawString($"Thu ngan: {_detail.StaffName}", _fontRegular, Brushes.Black, margin, y);
             y += 18;
-            g.DrawString($"Khach hang: {_detail.CustomerName}", _fontRegular, Brushes.Black, margin, y);
+            g.DrawString($"Khach hang: {_detail.FullName}", _fontRegular, Brushes.Black, margin, y);
             y += 25;
 
             // 3. Items Table Header
