@@ -114,6 +114,7 @@ namespace SmartPos.Module.PurchaseOrders.Backend
                             ProductCode = Convert.ToString(reader["ProductCode"]),
                             ProductName = Convert.ToString(reader["ProductName"]),
                             BatchNumber = Convert.ToString(reader["BatchNumber"]),
+                            ShelfLocation = reader["ShelfLocation"] == DBNull.Value ? null : Convert.ToString(reader["ShelfLocation"]),
                             ExpiryDate = reader["ExpiryDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(reader["ExpiryDate"]),
                             Quantity = Convert.ToDecimal(reader["Quantity"]),
                             WarehouseName = Convert.ToString(reader["WarehouseName"])
@@ -135,6 +136,7 @@ namespace SmartPos.Module.PurchaseOrders.Backend
                 command.Parameters.AddWithValue("@Quantity", item.Quantity);
                 command.Parameters.AddWithValue("@CostPrice", item.CostPrice);
                 command.Parameters.AddWithValue("@BatchNumber", string.IsNullOrWhiteSpace(item.BatchNumber) ? (object)DBNull.Value : item.BatchNumber);
+                command.Parameters.AddWithValue("@ShelfLocation", string.IsNullOrWhiteSpace(item.ShelfLocation) ? (object)DBNull.Value : item.ShelfLocation);
                 command.Parameters.AddWithValue("@ManufactureDate", item.ManufactureDate.HasValue ? (object)item.ManufactureDate.Value.Date : DBNull.Value);
                 command.Parameters.AddWithValue("@ExpiryDate", item.ExpiryDate.HasValue ? (object)item.ExpiryDate.Value.Date : DBNull.Value);
                 command.ExecuteNonQuery();
@@ -148,6 +150,7 @@ namespace SmartPos.Module.PurchaseOrders.Backend
                 command.Parameters.AddWithValue("@WarehouseID", warehouseId);
                 command.Parameters.AddWithValue("@ProductID", item.ProductID);
                 command.Parameters.AddWithValue("@BatchNumber", string.IsNullOrWhiteSpace(item.BatchNumber) ? (object)DBNull.Value : item.BatchNumber);
+                command.Parameters.AddWithValue("@ShelfLocation", string.IsNullOrWhiteSpace(item.ShelfLocation) ? (object)DBNull.Value : item.ShelfLocation);
                 command.Parameters.AddWithValue("@ManufactureDate", item.ManufactureDate.HasValue ? (object)item.ManufactureDate.Value.Date : DBNull.Value);
                 command.Parameters.AddWithValue("@ExpiryDate", item.ExpiryDate.HasValue ? (object)item.ExpiryDate.Value.Date : DBNull.Value);
                 command.Parameters.AddWithValue("@Quantity", item.Quantity);

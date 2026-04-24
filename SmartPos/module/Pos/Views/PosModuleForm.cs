@@ -396,6 +396,13 @@ namespace SmartPos.Module.Pos
             var products = _controller.FindProducts(term);
             if (products.Any())
             {
+                foreach (var p in products)
+                {
+                    if (p.TotalStock <= 0)
+                    {
+                        p.ProductName += " (Hết hàng)";
+                    }
+                }
                 lstSuggestions.DataSource = products;
                 lstSuggestions.DisplayMember = "ProductName";
                 lstSuggestions.Visible = true;
@@ -415,6 +422,11 @@ namespace SmartPos.Module.Pos
         {
             if (lstSuggestions.SelectedItem is CartItem product)
             {
+                if (product.TotalStock <= 0)
+                {
+                    MessageBox.Show("Sản phẩm này đã hết hàng, không thể thêm vào hóa đơn!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
                 AddToCart(product);
                 txtSearch.Clear();
                 lstSuggestions.Visible = false;
