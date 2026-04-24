@@ -22,6 +22,7 @@ namespace SmartPos.Module.Pos
         public decimal SubTotal => UnitPrice * Quantity;
         public int UnitID { get; set; }
         public string UnitName { get; set; }
+        public string ImageUrl { get; set; }
     }
 
     public class InvoiceListItem

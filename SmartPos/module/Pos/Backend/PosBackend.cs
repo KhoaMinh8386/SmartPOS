@@ -21,7 +21,7 @@ namespace SmartPos.Module.Pos
             using (SqlConnection conn = new SqlConnection(_connectionString))
             using (SqlCommand cmd = new SqlCommand(@"
 SELECT TOP 10 
-    p.ProductID, p.ProductCode, p.ProductName, p.RetailPrice, p.BaseUnitID, u.UnitName,
+    p.ProductID, p.ProductCode, p.ProductName, p.RetailPrice, p.BaseUnitID, u.UnitName, p.ImageUrl,
     ISNULL(ps.SaleID, 0) as SaleID,
     CASE 
         WHEN ps.SaleID IS NULL THEN p.RetailPrice
@@ -54,7 +54,8 @@ ORDER BY p.ProductName;", conn))
                             UnitPrice = (decimal)rdr["FinalPrice"],
                             UnitID = (int)rdr["BaseUnitID"],
                             UnitName = rdr["UnitName"]?.ToString() ?? "Cai",
-                            Quantity = 1
+                            Quantity = 1,
+                            ImageUrl = rdr["ImageUrl"]?.ToString()
                         });
                     }
                 }

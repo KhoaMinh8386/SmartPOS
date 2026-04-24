@@ -112,5 +112,29 @@ JOIN Products p ON ii.ProductID = p.ProductID
 JOIN Categories cat ON p.CategoryID = cat.CategoryID
 WHERE i.Status = 1 AND i.InvoiceDate >= @FromDate AND i.InvoiceDate <= @ToDate
 GROUP BY cat.CategoryName;";
+
+        public const string GetAllBatches = @"
+SELECT 
+    p.ProductID, p.ProductCode, p.ProductName,
+    i.BatchNumber, i.ManufactureDate, i.ExpiryDate,
+    i.Quantity, '' AS ShelfLocation, w.WarehouseName,
+    DATEDIFF(DAY, GETDATE(), ISNULL(i.ExpiryDate, GETDATE() + 9999)) as DaysToExpiry
+FROM Inventory i
+JOIN Products p ON i.ProductID = p.ProductID
+LEFT JOIN Warehouses w ON i.WarehouseID = w.WarehouseID
+WHERE (@WarehouseID = 0 OR i.WarehouseID = @WarehouseID)
+ORDER BY i.ExpiryDate ASC;";
+
+        public const string GetBatchesByProduct = @"
+SELECT 
+    p.ProductID, p.ProductCode, p.ProductName,
+    i.BatchNumber, i.ManufactureDate, i.ExpiryDate,
+    i.Quantity, '' AS ShelfLocation, w.WarehouseName,
+    DATEDIFF(DAY, GETDATE(), ISNULL(i.ExpiryDate, GETDATE() + 9999)) as DaysToExpiry
+FROM Inventory i
+JOIN Products p ON i.ProductID = p.ProductID
+LEFT JOIN Warehouses w ON i.WarehouseID = w.WarehouseID
+WHERE i.ProductID = @ProductID
+ORDER BY i.ExpiryDate ASC;";
     }
 }

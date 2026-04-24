@@ -24,5 +24,9 @@ namespace SmartPos.Module.Reports.Controllers
         public List<ProductReportItem> GetProductPerformance(DateTime from, DateTime to) => _backend.GetProductPerformance(from, to);
         public List<CustomerReportItem> GetCustomerReport() => _backend.GetCustomerReport();
         public List<ProfitReportItem> GetProfitReport(DateTime from, DateTime to) => _backend.GetProfitReport(from, to);
+        
+        // Wrapper cho Lô & Hạn sử dụng
+        public List<BatchReportItem> GetAllBatches(int warehouseID = 0) => _backend.GetAllBatches(warehouseID);
+        public List<BatchReportItem> GetBatchesByProduct(int productID) => _backend.GetBatchesByProduct(productID);
     }
 }

@@ -4,7 +4,7 @@ namespace SmartPos.Module.Pos
     {
         public const string FindProduct = @"
 SELECT TOP 10 
-    p.ProductID, p.ProductCode, p.ProductName, p.RetailPrice, u.UnitName
+    p.ProductID, p.ProductCode, p.ProductName, p.RetailPrice, u.UnitName, p.ImageUrl
 FROM dbo.Products p
 LEFT JOIN dbo.Units u ON p.BaseUnitID = u.UnitID
 WHERE p.IsActive = 1 

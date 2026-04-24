@@ -10,6 +10,7 @@ using SmartPos.Module.InventoryAudit.Views;
 using SmartPos.Module.PurchaseOrders.Views;
 using SmartPos.Module.Suppliers.Views;
 using SmartPos.Module.Reports.Views;
+using SmartPos.Module.Loyalty.Views;
 
 
 namespace SmartPos
@@ -44,7 +45,8 @@ namespace SmartPos
                 Dock = DockStyle.Left,
                 Width = 240,
                 BackColor = Color.FromArgb(33, 43, 54),
-                Padding = new Padding(0, 20, 0, 0)
+                Padding = new Padding(0, 20, 0, 0),
+                AutoScroll = true
             };
 
             AddMenuButton("🏠 Dashboard", "Dashboard", true);
@@ -56,6 +58,7 @@ namespace SmartPos
             AddMenuButton("🔍 Kiểm kê kho", "Inventory", UserSession.IsManager);
             AddMenuButton("🎫 Khuyến mãi", "Promotions", UserSession.IsManager);
             AddMenuButton("👤 Khách hàng", "Customers", true);
+            AddMenuButton("💖 Khách hàng thân thiết", "Loyalty", true);
             AddMenuButton("📊 Báo cáo lợi nhuận", "ProfitReport", UserSession.IsAdmin);
             AddMenuButton("👥 Báo cáo khách hàng", "CustomerReport", UserSession.IsAdmin);
             AddMenuButton("📦 Báo cáo sản phẩm", "ProductReport", UserSession.IsAdmin);
@@ -73,8 +76,24 @@ namespace SmartPos
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            lblUserNav = new Label { Text = UserSession.CurrentUser?.FullName, Font = new Font("Segoe UI", 11, FontStyle.Bold), Location = new Point(20, 15), AutoSize = true };
-            lblRoleNav = new Label { Text = "Chức vụ: " + (UserSession.CurrentUser?.Role.ToString() ?? "Admin"), Font = new Font("Segoe UI", 9), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(20, 38), AutoSize = true };
+            Button btnToggleSidebar = new Button
+            {
+                Text = "☰",
+                Size = new Size(40, 40),
+                Location = new Point(10, 15),
+                FlatStyle = FlatStyle.Flat,
+                ForeColor = Color.FromArgb(33, 43, 54),
+                BackColor = Color.Transparent,
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnToggleSidebar.FlatAppearance.BorderSize = 0;
+            btnToggleSidebar.Click += (s, e) => {
+                panelSidebar.Visible = !panelSidebar.Visible;
+            };
+
+            lblUserNav = new Label { Text = UserSession.CurrentUser?.FullName, Font = new Font("Segoe UI", 11, FontStyle.Bold), Location = new Point(60, 15), AutoSize = true };
+            lblRoleNav = new Label { Text = "Chức vụ: " + (UserSession.CurrentUser?.Role.ToString() ?? "Admin"), Font = new Font("Segoe UI", 9), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(60, 38), AutoSize = true };
             
             // Container cho phần bên phải của header
             var pnlRight = new Panel
@@ -114,6 +133,7 @@ namespace SmartPos
             pnlRight.Controls.Add(lblTime);
             pnlRight.Controls.Add(btnLogout);
 
+            panelHeader.Controls.Add(btnToggleSidebar);
             panelHeader.Controls.Add(lblUserNav);
             panelHeader.Controls.Add(lblRoleNav);
             panelHeader.Controls.Add(pnlRight);
@@ -206,6 +226,9 @@ namespace SmartPos
                     break;
                 case "customers":
                     moduleControl = new CustomerModuleForm { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
+                    break;
+                case "loyalty":
+                    moduleControl = new LoyaltyManagementForm { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
                     break;
                 case "saleshistory":
                     moduleControl = new frmOrderManagement { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };

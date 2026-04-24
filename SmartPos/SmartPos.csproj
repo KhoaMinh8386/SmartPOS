@@ -147,6 +147,9 @@
     <Compile Include="module\Reports\Views\frmProductReport.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="module\Reports\Views\frmProductDetail.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="module\Reports\Views\frmCustomerReport.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -184,6 +187,19 @@
     <!-- Module: Users -->
     <Compile Include="module\Users\UserManagementModuleControl.cs">
       <SubType>UserControl</SubType>
+    </Compile>
+
+    <!-- Module: Loyalty -->
+    <Compile Include="module\Loyalty\Models\LoyaltyModels.cs" />
+    <Compile Include="module\Loyalty\Templates\LoyaltySqlTemplate.cs" />
+    <Compile Include="module\Loyalty\Backend\EmailService.cs" />
+    <Compile Include="module\Loyalty\Backend\LoyaltyBackend.cs" />
+    <Compile Include="module\Loyalty\Controllers\LoyaltyController.cs" />
+    <Compile Include="module\Loyalty\Views\LoyaltyManagementForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="module\Loyalty\Views\LoyaltyManagementForm.Designer.cs">
+      <DependentUpon>LoyaltyManagementForm.cs</DependentUpon>
     </Compile>
 
     <Compile Include="Program.cs" />

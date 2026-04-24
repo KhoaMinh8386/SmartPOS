@@ -183,5 +183,78 @@ namespace SmartPos.Module.Reports.Backend
             }
             return dt;
         }
+
+        // ─── BATCHES ───────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Lấy toàn bộ lô từ Inventory, filter theo warehouseID nếu > 0.
+        /// Tính DaysToExpiry và join với Products, Warehouses.
+        /// </summary>
+        public List<BatchReportItem> GetAllBatches(int warehouseID = 0)
+        {
+            var result = new List<BatchReportItem>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            using (SqlCommand cmd = new SqlCommand(ReportSqlTemplate.GetAllBatches, conn))
+            {
+                cmd.Parameters.AddWithValue("@WarehouseID", warehouseID);
+
+                conn.Open();
+                using (SqlDataReader rdr = cmd.ExecuteReader())
+                {
+                    while (rdr.Read())
+                    {
+                        result.Add(new BatchReportItem
+                        {
+                            ProductID = (int)rdr["ProductID"],
+                            ProductCode = rdr["ProductCode"]?.ToString(),
+                            ProductName = rdr["ProductName"]?.ToString(),
+                            BatchNumber = rdr["BatchNumber"]?.ToString(),
+                            ManufactureDate = rdr["ManufactureDate"] as DateTime?,
+                            ExpiryDate = rdr["ExpiryDate"] as DateTime?,
+                            Quantity = (decimal)rdr["Quantity"],
+                            ShelfLocation = rdr["ShelfLocation"]?.ToString(),
+                            WarehouseName = rdr["WarehouseName"]?.ToString(),
+                            DaysToExpiry = (int)rdr["DaysToExpiry"]
+                        });
+                    }
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Lấy toàn bộ lô của 1 sản phẩm cụ thể.
+        /// </summary>
+        public List<BatchReportItem> GetBatchesByProduct(int productID)
+        {
+            var result = new List<BatchReportItem>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            using (SqlCommand cmd = new SqlCommand(ReportSqlTemplate.GetBatchesByProduct, conn))
+            {
+                cmd.Parameters.AddWithValue("@ProductID", productID);
+
+                conn.Open();
+                using (SqlDataReader rdr = cmd.ExecuteReader())
+                {
+                    while (rdr.Read())
+                    {
+                        result.Add(new BatchReportItem
+                        {
+                            ProductID = (int)rdr["ProductID"],
+                            ProductCode = rdr["ProductCode"]?.ToString(),
+                            ProductName = rdr["ProductName"]?.ToString(),
+                            BatchNumber = rdr["BatchNumber"]?.ToString(),
+                            ManufactureDate = rdr["ManufactureDate"] as DateTime?,
+                            ExpiryDate = rdr["ExpiryDate"] as DateTime?,
+                            Quantity = (decimal)rdr["Quantity"],
+                            ShelfLocation = rdr["ShelfLocation"]?.ToString(),
+                            WarehouseName = rdr["WarehouseName"]?.ToString(),
+                            DaysToExpiry = (int)rdr["DaysToExpiry"]
+                        });
+                    }
+                }
+            }
+            return result;
+        }
     }
 }

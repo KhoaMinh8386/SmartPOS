@@ -74,7 +74,7 @@ namespace SmartPos.Module.Customers.Backend
                         Phone        = rdr["Phone"]?.ToString(),
                         Email        = rdr["Email"]?.ToString(),
                         Address      = rdr["Address"]?.ToString(),
-                        Gender       = rdr["Gender"]?.ToString(),
+                        Gender       = GetGenderString(rdr["Gender"]),
                         DateOfBirth  = rdr["DateOfBirth"] as DateTime?,
                         TotalPoints  = (int)rdr["TotalPoints"],
                         TotalSpent   = (decimal)rdr["TotalSpent"],
@@ -100,7 +100,7 @@ namespace SmartPos.Module.Customers.Backend
                     cmd.Parameters.AddWithValue("@Phone",       (object)req.Phone       ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@Email",       (object)req.Email       ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@Address",     (object)req.Address     ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@Gender",      (object)req.Gender      ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Gender",      GetGenderValue(req.Gender));
                     cmd.Parameters.AddWithValue("@DateOfBirth", (object)req.DateOfBirth ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@Note",        (object)req.Note        ?? DBNull.Value);
                     con.Open(); cmd.ExecuteNonQuery();
@@ -122,7 +122,7 @@ SELECT SCOPE_IDENTITY();", con))
                     cmd.Parameters.AddWithValue("@Phone",       (object)req.Phone       ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@Email",       (object)req.Email       ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@Address",     (object)req.Address     ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@Gender",      (object)req.Gender      ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Gender",      GetGenderValue(req.Gender));
                     cmd.Parameters.AddWithValue("@DateOfBirth", (object)req.DateOfBirth ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@Note",        (object)req.Note        ?? DBNull.Value);
                     con.Open();
@@ -210,6 +210,24 @@ SELECT SCOPE_IDENTITY();", con))
                 con.Open();
                 return cmd.ExecuteScalar()?.ToString() ?? "KH0001";
             }
+        }
+
+        private object GetGenderValue(string gender)
+        {
+            if (gender == "Nam" || gender == "1") return 1;
+            if (gender == "Nữ" || gender == "0") return 0;
+            if (gender == "Khác" || gender == "2") return 2;
+            return DBNull.Value;
+        }
+
+        private string GetGenderString(object dbValue)
+        {
+            if (dbValue == null || dbValue == DBNull.Value) return null;
+            string val = dbValue.ToString();
+            if (val == "1" || val == "Nam") return "Nam";
+            if (val == "0" || val == "Nữ") return "Nữ";
+            if (val == "2" || val == "Khác") return "Khác";
+            return val;
         }
     }
 }

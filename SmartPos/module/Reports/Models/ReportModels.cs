@@ -59,4 +59,18 @@ namespace SmartPos.Module.Reports.Models
         public decimal Cost { get; set; }
         public decimal Profit => Revenue - Cost;
     }
+
+    public class BatchReportItem
+    {
+        public int ProductID { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public string BatchNumber { get; set; }
+        public DateTime? ManufactureDate { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public decimal Quantity { get; set; }
+        public string ShelfLocation { get; set; }
+        public string WarehouseName { get; set; }
+        public int DaysToExpiry { get; set; }
+    }
 }

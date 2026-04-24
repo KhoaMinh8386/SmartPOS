@@ -24,7 +24,7 @@ namespace SmartPos.Module.Pos
         // UI Components
         private DataGridView dgvCart;
         private TextBox txtSearch;
-        private ListBox lstSuggestions;
+        private FlowLayoutPanel pnlSuggestions;
         private ListBox lstCustomerSuggestions;
         private TextBox txtPhone;
         private Label lblCustomerInfo;
@@ -113,21 +113,19 @@ namespace SmartPos.Module.Pos
             pnlSearchContainer.Controls.Add(txtSearch);
             left.Controls.Add(pnlSearchContainer, 0, 1);
 
-            // Floating Suggestions Listbox (Đưa vào panel left nhưng ở lớp trên cùng)
-            lstSuggestions = new ListBox
+            // Floating Suggestions FlowLayoutPanel (Đưa vào form gốc để nổi lên trên cùng)
+            pnlSuggestions = new FlowLayoutPanel
             {
                 Visible = false,
-                Width = 600, Height = 300,
-                Font = new Font("Segoe UI", 11F),
-                Location = new Point(8, 85), // Sát ngay dưới thanh search
+                Width = 600, Height = 400,
                 BorderStyle = BorderStyle.FixedSingle,
-                Cursor = Cursors.Hand,
                 BackColor = Color.White,
-                ForeColor = Color.Black
+                AutoScroll = true,
+                WrapContents = true,
+                Padding = new Padding(5)
             };
-            lstSuggestions.DoubleClick += (s, e) => AddSelectedSuggestion();
-            left.Controls.Add(lstSuggestions); // Add vào left để không bị clipping bởi pnlSearch
-            lstSuggestions.BringToFront();
+            this.Controls.Add(pnlSuggestions);
+            pnlSuggestions.BringToFront();
 
             // Row 2 – Cart DataGridView
             dgvCart = new DataGridView
@@ -230,11 +228,12 @@ namespace SmartPos.Module.Pos
             };
             chkUsePoints.CheckedChanged += (s, e) => UpdateTotal();
 
-            pnlCustomerCard.Controls.Add(lstCustomerSuggestions); // Add listbox trước để BringToFront
             pnlCustomerCard.Controls.Add(chkUsePoints);
             pnlCustomerCard.Controls.Add(lblCustomerInfo);
             pnlCustomerCard.Controls.Add(txtPhone);
             pnlCustomerCard.Controls.Add(lblCustHeader);
+            
+            this.Controls.Add(lstCustomerSuggestions);
             lstCustomerSuggestions.BringToFront();
             
             right.Controls.Add(pnlCustomerCard, 0, 0);
@@ -338,6 +337,10 @@ namespace SmartPos.Module.Pos
             root.Controls.Add(left, 0, 0);
             root.Controls.Add(right, 1, 0);
             this.Controls.Add(root);
+            
+            // Re-assert z-order for floating panels
+            pnlSuggestions.BringToFront();
+            lstCustomerSuggestions.BringToFront();
         }
 
         // Helpers for creating consistent labels
@@ -391,36 +394,110 @@ namespace SmartPos.Module.Pos
         private void TxtSearch_TextChanged(object sender, EventArgs e)
         {
             string term = txtSearch.Text.Trim();
-            if (term.Length < 2) { lstSuggestions.Visible = false; return; }
+            if (term.Length < 2 || term.Contains("🔍")) { pnlSuggestions.Visible = false; return; }
 
             var products = _controller.FindProducts(term);
             if (products.Any())
             {
-                lstSuggestions.DataSource = products;
-                lstSuggestions.DisplayMember = "ProductName";
-                lstSuggestions.Visible = true;
-                lstSuggestions.BringToFront();
+                pnlSuggestions.Controls.Clear();
+                foreach (var prod in products)
+                {
+                    var card = CreateProductCard(prod);
+                    pnlSuggestions.Controls.Add(card);
+                }
+                
+                // Position exactly under the search box
+                var pt = txtSearch.PointToScreen(new Point(0, txtSearch.Height));
+                pnlSuggestions.Location = this.PointToClient(pt);
+                // Optional: Make it match the width of the search box or left panel
+                // pnlSuggestions.Width = txtSearch.Width; 
+                
+                pnlSuggestions.Visible = true;
+                pnlSuggestions.BringToFront();
             }
-            else { lstSuggestions.Visible = false; }
+            else { pnlSuggestions.Visible = false; }
+        }
+
+        private Panel CreateProductCard(CartItem product)
+        {
+            var pnl = new Panel
+            {
+                Width = 135, Height = 180,
+                Margin = new Padding(5),
+                BackColor = Color.White,
+                Cursor = Cursors.Hand,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+
+            var pic = new PictureBox
+            {
+                Dock = DockStyle.Top,
+                Height = 100,
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Cursor = Cursors.Hand,
+                BackColor = Color.FromArgb(245, 245, 245)
+            };
+
+            if (!string.IsNullOrEmpty(product.ImageUrl))
+            {
+                try { pic.LoadAsync(product.ImageUrl); }
+                catch { /* ignore */ }
+            }
+
+            var lblName = new Label
+            {
+                Text = product.ProductName,
+                Dock = DockStyle.Top,
+                Height = 40,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+
+            var lblPrice = new Label
+            {
+                Text = product.UnitPrice.ToString("N0") + " đ",
+                Dock = DockStyle.Bottom,
+                Height = 30,
+                TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = Color.FromArgb(220, 38, 38),
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+
+            pnl.Controls.Add(lblPrice);
+            pnl.Controls.Add(lblName);
+            pnl.Controls.Add(pic);
+
+            // Add click events to all controls inside the card
+            EventHandler onClick = (s, e) => {
+                AddToCart(product);
+                txtSearch.Clear();
+                pnlSuggestions.Visible = false;
+                txtSearch.Focus();
+            };
+
+            pnl.Click += onClick;
+            pic.Click += onClick;
+            lblName.Click += onClick;
+            lblPrice.Click += onClick;
+
+            // Hover effects
+            pnl.MouseEnter += (s, e) => pnl.BackColor = Color.FromArgb(240, 248, 255);
+            pnl.MouseLeave += (s, e) => pnl.BackColor = Color.White;
+
+            return pnl;
         }
 
         private void TxtSearch_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Down && lstSuggestions.Visible) lstSuggestions.Focus();
-            if (e.KeyCode == Keys.Enter && !lstSuggestions.Visible) { /* Handle direct barcode */ }
-            if (e.KeyCode == Keys.Enter && lstSuggestions.Visible) AddSelectedSuggestion();
-        }
-
-        private void AddSelectedSuggestion()
-        {
-            if (lstSuggestions.SelectedItem is CartItem product)
+            if (e.KeyCode == Keys.Escape && pnlSuggestions.Visible)
             {
-                AddToCart(product);
-                txtSearch.Clear();
-                lstSuggestions.Visible = false;
-                txtSearch.Focus();
+                pnlSuggestions.Visible = false;
             }
         }
+
+        // Removing AddSelectedSuggestion since we use click directly on ProductCards
 
         private void AddToCart(CartItem product)
         {
@@ -498,6 +575,12 @@ namespace SmartPos.Module.Pos
             {
                 lstCustomerSuggestions.DataSource = customers;
                 lstCustomerSuggestions.DisplayMember = "FullName";
+                
+                // Position exactly under the phone input box
+                var pt = txtPhone.PointToScreen(new Point(0, txtPhone.Height));
+                lstCustomerSuggestions.Location = this.PointToClient(pt);
+                lstCustomerSuggestions.Width = txtPhone.Width;
+                
                 lstCustomerSuggestions.Visible = true;
                 lstCustomerSuggestions.BringToFront();
             }
@@ -665,7 +748,7 @@ namespace SmartPos.Module.Pos
             chkUsePoints.Checked = false;
             chkUsePoints.Visible = false;
             lstCustomerSuggestions.Visible = false;
-            lstSuggestions.Visible = false;
+            pnlSuggestions.Visible = false;
             lblCustomerInfo.Text = "Khách lẻ";
             RefreshCart();
         }
