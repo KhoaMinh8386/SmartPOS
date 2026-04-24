@@ -90,7 +90,7 @@ namespace SmartPos.Module.SalesHistory.Backend
                                 VoucherDiscount = (decimal)rdr["VoucherDiscount"],
                                 LoyaltyPointsUsed = (int)rdr["LoyaltyPointsUsed"],
                                 LoyaltyDiscount = (decimal)rdr["LoyaltyDiscount"],
-                                FinalAmount = (decimal)rdr["PaidAmount"] + (decimal)rdr["ChangeAmount"], // Approx
+                                FinalAmount = (decimal)rdr["TotalAmount"],
                                 PaidAmount = (decimal)rdr["PaidAmount"],
                                 ChangeAmount = (decimal)rdr["ChangeAmount"],
                                 PaymentMethod = (byte)rdr["PaymentMethod"],

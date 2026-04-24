@@ -96,7 +96,7 @@ ORDER BY i.ExpiryDate ASC;";
 
         public const string GetCustomerReport = @"
 SELECT 
-    CustomerID, FullName, CustomerRank as Rank, TotalSpent, LoyaltyPoints,
+    CustomerID, FullName, CustomerType as Rank, TotalSpent, TotalPoints as LoyaltyPoints,
     (SELECT COUNT(*) FROM Invoices WHERE CustomerID = Customers.CustomerID AND Status = 1) as OrderCount
 FROM Customers
 ORDER BY TotalSpent DESC;";

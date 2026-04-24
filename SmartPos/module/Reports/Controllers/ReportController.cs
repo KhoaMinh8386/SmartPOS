@@ -22,6 +22,7 @@ namespace SmartPos.Module.Reports.Controllers
         public DataTable GetRecentInvoices() => _backend.GetRecentInvoices();
         public DataTable GetLowStockAlert() => _backend.GetLowStockAlert();
         public List<ProductReportItem> GetProductPerformance(DateTime from, DateTime to) => _backend.GetProductPerformance(from, to);
+        public List<ProductReportItem> GetNearExpiryItems(int days) => _backend.GetNearExpiryItems(days);
         public List<CustomerReportItem> GetCustomerReport() => _backend.GetCustomerReport();
         public List<ProfitReportItem> GetProfitReport(DateTime from, DateTime to) => _backend.GetProfitReport(from, to);
         

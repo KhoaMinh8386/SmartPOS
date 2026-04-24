@@ -121,6 +121,32 @@ namespace SmartPos.Module.Reports.Backend
             return result;
         }
 
+        public List<ProductReportItem> GetNearExpiryItems(int days)
+        {
+            var result = new List<ProductReportItem>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            using (SqlCommand cmd = new SqlCommand(ReportSqlTemplate.GetNearExpiryItems, conn))
+            {
+                cmd.Parameters.AddWithValue("@Days", days);
+                conn.Open();
+                using (SqlDataReader rdr = cmd.ExecuteReader())
+                {
+                    while (rdr.Read())
+                    {
+                        result.Add(new ProductReportItem
+                        {
+                            ProductID = (int)rdr["ProductID"],
+                            ProductCode = rdr["ProductCode"].ToString(),
+                            ProductName = rdr["ProductName"].ToString(),
+                            CurrentStock = (decimal)rdr["CurrentStock"],
+                            ExpiryDate = rdr["ExpiryDate"] as DateTime?
+                        });
+                    }
+                }
+            }
+            return result;
+        }
+
         public List<CustomerReportItem> GetCustomerReport()
         {
             var result = new List<CustomerReportItem>();

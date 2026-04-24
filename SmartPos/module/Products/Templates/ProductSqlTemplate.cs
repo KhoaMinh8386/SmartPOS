@@ -11,7 +11,9 @@ SELECT
     p.RetailPrice, 
     p.Location, 
     p.IsActive,
-    ISNULL(inv.TotalQty, 0) as StockQuantity
+    ISNULL(inv.TotalQty, 0) as StockQuantity,
+    fefo.BatchNumber,
+    fefo.ExpiryDate
 FROM dbo.Products p
 INNER JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
 LEFT JOIN (
@@ -19,12 +21,24 @@ LEFT JOIN (
     FROM dbo.Inventory 
     GROUP BY ProductID
 ) inv ON p.ProductID = inv.ProductID
+OUTER APPLY (
+    SELECT TOP 1 BatchNumber, ExpiryDate
+    FROM dbo.Inventory i
+    WHERE i.ProductID = p.ProductID AND i.Quantity > 0
+    ORDER BY 
+        CASE WHEN ExpiryDate IS NULL THEN 1 ELSE 0 END, 
+        ExpiryDate ASC, 
+        InventoryID ASC
+) fefo
 WHERE (@Search IS NULL OR p.ProductName LIKE @Search OR p.ProductCode LIKE @Search OR p.Barcode LIKE @Search)
   AND (@CategoryID = 0 OR p.CategoryID = @CategoryID)
 ORDER BY p.ProductName;";
 
         public const string GetProductDetail = @"
-SELECT * FROM dbo.Products WHERE ProductID = @ProductID;";
+SELECT p.*, u.UnitName 
+FROM dbo.Products p
+LEFT JOIN dbo.Units u ON p.BaseUnitID = u.UnitID
+WHERE p.ProductID = @ProductID;";
 
         public const string InsertProduct = @"
 INSERT INTO dbo.Products (

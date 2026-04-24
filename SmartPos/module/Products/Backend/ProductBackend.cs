@@ -67,6 +67,8 @@ namespace SmartPos.Module.Products.Backend
                             RetailPrice = (decimal)rdr["RetailPrice"],
                             Location = rdr["Location"]?.ToString(),
                             StockQuantity = (decimal)rdr["StockQuantity"],
+                            BatchNumber = rdr["BatchNumber"]?.ToString(),
+                            ExpiryDate = rdr["ExpiryDate"] != DBNull.Value ? (DateTime?)rdr["ExpiryDate"] : null,
                             IsActive = (bool)rdr["IsActive"]
                         });
                     }
@@ -102,6 +104,7 @@ namespace SmartPos.Module.Products.Backend
                             WholesalePrice = rdr["WholesalePrice"] == DBNull.Value ? (decimal?)null : (decimal)rdr["WholesalePrice"],
                             Weight = rdr["Weight"] == DBNull.Value ? (decimal?)null : (decimal)rdr["Weight"],
                             Location = rdr["Location"]?.ToString(),
+                            UnitName = rdr["UnitName"]?.ToString(),
                             IsActive = (bool)rdr["IsActive"],
                             HasExpiry = (bool)rdr["HasExpiry"]
                         };

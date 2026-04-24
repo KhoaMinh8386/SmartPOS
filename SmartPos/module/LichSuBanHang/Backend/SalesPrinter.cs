@@ -30,88 +30,112 @@ namespace SmartPos.Module.SalesHistory.Backend
         private void pd_PrintPage(object sender, PrintPageEventArgs e)
         {
             Graphics g = e.Graphics;
-            float y = 20;
-            float margin = 20;
-            float width = e.PageSettings.PrintableArea.Width - 2 * margin;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            // Define receipt width (simulating 80mm paper)
+            float receiptWidth = 300;
+            float margin = 10;
+            float contentWidth = receiptWidth - 2 * margin;
+            
+            // Center the receipt on the page if it's wider (like A4)
+            float xOffset = (e.PageBounds.Width - receiptWidth) / 2;
+            if (xOffset < 0) xOffset = 0;
+
+            float y = 15;
+            StringFormat center = new StringFormat { Alignment = StringAlignment.Center };
+            StringFormat right = new StringFormat { Alignment = StringAlignment.Far };
+
+            // 0. Logo
+            string logoPath = @"c:\Users\Admin\Projects\SmartPos\SmartPos\access\img\logo.png";
+            if (System.IO.File.Exists(logoPath))
+            {
+                using (Image logo = Image.FromFile(logoPath))
+                {
+                    float logoSize = 60;
+                    g.DrawImage(logo, xOffset + (receiptWidth - logoSize) / 2, y, logoSize, logoSize);
+                    y += logoSize + 10;
+                }
+            }
 
             // 1. Header - Store Info
-            g.DrawString("SMART POS RETAIL", _fontHeader, Brushes.Black, new RectangleF(margin, y, width, 30), new StringFormat { Alignment = StringAlignment.Center });
-            y += 30;
-            g.DrawString("123 Duong ABC, Quan 1, TP. HCM", _fontSmall, Brushes.Black, new RectangleF(margin, y, width, 20), new StringFormat { Alignment = StringAlignment.Center });
-            y += 15;
-            g.DrawString("Hotline: 1900 xxxx | Website: www.smartpos.vn", _fontSmall, Brushes.Black, new RectangleF(margin, y, width, 20), new StringFormat { Alignment = StringAlignment.Center });
+            g.DrawString("SMART POS SUPERMARKET", _fontHeader, Brushes.Black, new RectangleF(xOffset + margin, y, contentWidth, 50), center);
+            y += 45;
+            g.DrawString("84 Phú Thọ, Quận 11, TP.HCM", _fontRegular, Brushes.Black, new RectangleF(xOffset + margin, y, contentWidth, 20), center);
+            y += 18;
+            g.DrawString("SĐT: 0900.123.456", _fontRegular, Brushes.Black, new RectangleF(xOffset + margin, y, contentWidth, 20), center);
             y += 25;
 
-            // Separator
-            g.DrawLine(Pens.Black, margin, y, margin + width, y);
-            y += 10;
+            // Title
+            g.DrawString("HÓA ĐƠN BÁN HÀNG", _fontHeader, Brushes.Black, new RectangleF(xOffset + margin, y, contentWidth, 30), center);
+            y += 35;
 
             // 2. Invoice Info
-            g.DrawString("HOA DON BAN HANG", _fontBold, Brushes.Black, new RectangleF(margin, y, width, 20), new StringFormat { Alignment = StringAlignment.Center });
-            y += 25;
-            
-            g.DrawString($"Ma HD: {_detail.InvoiceCode}", _fontRegular, Brushes.Black, margin, y);
+            g.DrawString($"Mã HĐ: {_detail.InvoiceCode}", _fontRegular, Brushes.Black, xOffset + margin, y);
             y += 18;
-            g.DrawString($"Ngay: {_detail.InvoiceDate:dd/MM/yyyy HH:mm}", _fontRegular, Brushes.Black, margin, y);
+            g.DrawString($"Ngày: {_detail.InvoiceDate:dd/MM/yyyy HH:mm:ss}", _fontRegular, Brushes.Black, xOffset + margin, y);
             y += 18;
-            g.DrawString($"Thu ngan: {_detail.StaffName}", _fontRegular, Brushes.Black, margin, y);
+            g.DrawString($"Thu ngân: {_detail.StaffName}", _fontRegular, Brushes.Black, xOffset + margin, y);
             y += 18;
-            g.DrawString($"Khach hang: {_detail.FullName}", _fontRegular, Brushes.Black, margin, y);
+            g.DrawString($"Khách hàng: {(_detail.FullName ?? "Khách lẻ")}", _fontRegular, Brushes.Black, xOffset + margin, y);
             y += 25;
 
             // 3. Items Table Header
-            g.DrawLine(Pens.Black, margin, y, margin + width, y);
+            g.DrawLine(Pens.Black, xOffset + margin, y, xOffset + receiptWidth - margin, y);
             y += 5;
-            g.DrawString("Ten SP", _fontBold, Brushes.Black, margin, y);
-            g.DrawString("SL", _fontBold, Brushes.Black, margin + 150, y, new StringFormat { Alignment = StringAlignment.Far });
-            g.DrawString("Don gia", _fontBold, Brushes.Black, margin + 220, y, new StringFormat { Alignment = StringAlignment.Far });
-            g.DrawString("T.Tien", _fontBold, Brushes.Black, margin + width, y, new StringFormat { Alignment = StringAlignment.Far });
+            g.DrawString("Tên SP", _fontBold, Brushes.Black, xOffset + margin, y);
+            g.DrawString("SL", _fontBold, Brushes.Black, xOffset + receiptWidth - 110, y, right);
+            g.DrawString("Giá", _fontBold, Brushes.Black, xOffset + receiptWidth - 60, y, right);
+            g.DrawString("T.Tiền", _fontBold, Brushes.Black, xOffset + receiptWidth - margin, y, right);
             y += 20;
-            g.DrawLine(Pens.Black, margin, y, margin + width, y);
+            g.DrawLine(Pens.Black, xOffset + margin, y, xOffset + receiptWidth - margin, y);
             y += 5;
 
             // 4. Items List
             foreach (var item in _detail.Items)
             {
                 string name = item.ProductName;
-                if (name.Length > 25) name = name.Substring(0, 22) + "...";
+                if (name.Length > 22) name = name.Substring(0, 20) + "..";
 
-                g.DrawString(name, _fontRegular, Brushes.Black, margin, y);
-                g.DrawString(item.Quantity.ToString("N0"), _fontRegular, Brushes.Black, margin + 150, y, new StringFormat { Alignment = StringAlignment.Far });
-                g.DrawString(item.UnitPrice.ToString("N0"), _fontRegular, Brushes.Black, margin + 220, y, new StringFormat { Alignment = StringAlignment.Far });
-                g.DrawString(item.SubTotal.ToString("N0"), _fontRegular, Brushes.Black, margin + width, y, new StringFormat { Alignment = StringAlignment.Far });
-                y += 18;
+                g.DrawString(name, _fontRegular, Brushes.Black, xOffset + margin, y);
+                y += 15;
+                // Draw quantity and price on next line if needed, but here we align them
+                g.DrawString(item.Quantity.ToString("0.#"), _fontRegular, Brushes.Black, xOffset + receiptWidth - 110, y - 15, right);
+                g.DrawString(item.UnitPrice.ToString("N0"), _fontRegular, Brushes.Black, xOffset + receiptWidth - 60, y - 15, right);
+                g.DrawString(item.SubTotal.ToString("N0"), _fontRegular, Brushes.Black, xOffset + receiptWidth - margin, y - 15, right);
+                // y += 5; // spacing between items
             }
 
             // 5. Financial Summary
             y += 10;
-            g.DrawLine(Pens.Black, margin, y, margin + width, y);
+            g.DrawLine(Pens.Black, xOffset + margin, y, xOffset + receiptWidth - margin, y);
             y += 10;
 
-            DrawSummaryLine(g, "Tong tien hang:", _detail.TotalAmount, ref y, margin, width);
+            DrawSummaryLine(g, "Tạm tính:", _detail.TotalAmount + _detail.DiscountAmount + _detail.VoucherDiscount + _detail.LoyaltyDiscount, ref y, xOffset + margin, contentWidth);
             if (_detail.DiscountAmount > 0)
-                DrawSummaryLine(g, "Giam gia:", _detail.DiscountAmount, ref y, margin, width);
+                DrawSummaryLine(g, "Giảm giá:", _detail.DiscountAmount, ref y, xOffset + margin, contentWidth);
             if (_detail.VoucherDiscount > 0)
-                DrawSummaryLine(g, "Voucher:", _detail.VoucherDiscount, ref y, margin, width);
+                DrawSummaryLine(g, "Voucher:", _detail.VoucherDiscount, ref y, xOffset + margin, contentWidth);
             if (_detail.LoyaltyDiscount > 0)
-                DrawSummaryLine(g, "Diem doi:", _detail.LoyaltyDiscount, ref y, margin, width);
+                DrawSummaryLine(g, "Điểm đổi:", _detail.LoyaltyDiscount, ref y, xOffset + margin, contentWidth);
 
-            y += 5;
-            g.DrawString("THANH TOAN:", _fontBold, Brushes.Black, margin, y);
-            g.DrawString(_detail.PaidAmount.ToString("N0"), _fontHeader, Brushes.Black, margin + width, y - 5, new StringFormat { Alignment = StringAlignment.Far });
-            y += 35;
+            y += 10;
+            g.DrawString("TỔNG THANH TOÁN:", _fontBold, Brushes.Black, xOffset + margin, y);
+            g.DrawString(_detail.FinalAmount.ToString("N0") + " đ", _fontHeader, Brushes.Black, xOffset + receiptWidth - margin, y - 5, right);
+            y += 40;
 
             // 6. Footer
-            g.DrawString("Cam on Quy khach. Hen gap lai!", _fontRegular, Brushes.Black, new RectangleF(margin, y, width, 20), new StringFormat { Alignment = StringAlignment.Center });
+            g.DrawLine(Pens.Black, xOffset + margin, y, xOffset + receiptWidth - margin, y);
+            y += 10;
+            g.DrawString("Cảm ơn quý khách! Hẹn gặp lại!", _fontRegular, Brushes.Black, new RectangleF(xOffset + margin, y, contentWidth, 20), center);
             y += 20;
-            g.DrawString("Vui long kiem tra hang truoc khi roi quay.", _fontSmall, Brushes.Black, new RectangleF(margin, y, width, 20), new StringFormat { Alignment = StringAlignment.Center });
+            g.DrawString("Vui lòng kiểm tra hàng trước khi rời quầy.", _fontSmall, Brushes.Black, new RectangleF(xOffset + margin, y, contentWidth, 20), center);
             
         }
 
-        private void DrawSummaryLine(Graphics g, string label, decimal value, ref float y, float margin, float width)
+        private void DrawSummaryLine(Graphics g, string label, decimal value, ref float y, float xStart, float width)
         {
-            g.DrawString(label, _fontRegular, Brushes.Black, margin + 120, y);
-            g.DrawString(value.ToString("N0"), _fontRegular, Brushes.Black, margin + width, y, new StringFormat { Alignment = StringAlignment.Far });
+            g.DrawString(label, _fontRegular, Brushes.Black, xStart, y);
+            g.DrawString(value.ToString("N0"), _fontRegular, Brushes.Black, xStart + width, y, new StringFormat { Alignment = StringAlignment.Far });
             y += 18;
         }
     }

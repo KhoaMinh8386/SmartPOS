@@ -20,7 +20,7 @@ namespace SmartPos.Module.Pos
             return new StoreConfig
             {
                 StoreName = "SMART POS SUPERMARKET",
-                Address = "123 Ly Thuong Kiet, Q.10, TP.HCM",
+                Address = "84 Phú Thọ, Quận 11, TP.HCM",
                 Phone = "0900.123.456",
                 FooterMessage = "Cảm ơn quý khách! Hẹn gặp lại!",
                 LoyaltyPointRate = 0.001m, // 1000đ = 1đ

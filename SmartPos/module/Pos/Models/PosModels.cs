@@ -24,6 +24,8 @@ namespace SmartPos.Module.Pos
         public string UnitName { get; set; }
         public string ImageUrl { get; set; }
         public decimal TotalStock { get; set; }
+        public string BatchNumber { get; set; }
+        public DateTime? ExpiryDate { get; set; }
     }
 
     public class InvoiceListItem

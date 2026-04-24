@@ -38,7 +38,9 @@ namespace SmartPos.Module.Pos
                             UnitName = rdr["UnitName"]?.ToString() ?? "Cai",
                             Quantity = 1,
                             ImageUrl = rdr["ImageUrl"]?.ToString(),
-                            TotalStock = rdr["TotalStock"] != DBNull.Value ? Convert.ToDecimal(rdr["TotalStock"]) : 0
+                            TotalStock = rdr["TotalStock"] != DBNull.Value ? Convert.ToDecimal(rdr["TotalStock"]) : 0,
+                            BatchNumber = rdr["BatchNumber"]?.ToString(),
+                            ExpiryDate = rdr["ExpiryDate"] != DBNull.Value ? (DateTime?)rdr["ExpiryDate"] : null
                         });
                     }
                 }

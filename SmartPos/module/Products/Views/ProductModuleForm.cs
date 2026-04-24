@@ -46,11 +46,11 @@ namespace SmartPos.Module.Products.Views
 
         private void InitializeUi()
         {
-            Text = "Quản lý sản phẩm";
-            Width = 1280;
-            Height = 800;
+            Text = "DANH MỤC SẢN PHẨM - KHO HÀNG";
+            Width = 1350;
+            Height = 850;
             StartPosition = FormStartPosition.CenterParent;
-            BackColor = Color.White;
+            BackColor = Color.FromArgb(241, 245, 249);
 
             var mainSplit = new SplitContainer
             {
@@ -68,17 +68,17 @@ namespace SmartPos.Module.Products.Views
             
             cboCategoryFilter = new ComboBox { Location = new Point(260, 15), Width = 150, DropDownStyle = ComboBoxStyle.DropDownList };
             
-            btnSearch = new Button { Text = "Tìm kiếm", Location = new Point(420, 12), Size = new Size(80, 32), BackColor = Color.LightGray };
+            btnSearch = new Button { Text = "Tìm kiếm", Location = new Point(420, 12), Size = new Size(80, 32), BackColor = Color.FromArgb(52, 73, 94), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
             btnSearch.Click += (s, e) => LoadProducts();
 
-            btnAdd = new Button { Text = "Thêm mới", Location = new Point(510, 12), Size = new Size(100, 32), BackColor = Color.FromArgb(76, 175, 80), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            btnAdd = new Button { Text = "+ Thêm mới", Location = new Point(510, 12), Size = new Size(100, 32), BackColor = Color.FromArgb(46, 204, 113), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
             btnAdd.Click += (s, e) => ShowEditor(0);
 
-            btnManageCategories = new Button { Text = "Danh mục", Location = new Point(620, 12), Size = new Size(100, 32) };
+            btnManageCategories = new Button { Text = "Danh mục", Location = new Point(620, 12), Size = new Size(100, 32), BackColor = Color.FromArgb(149, 165, 166), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
             btnManageCategories.Click += (s, e) => {
                 using (var f = new Form())
                 {
-                    f.Text = "Quản lý danh mục đa cấp";
+                    f.Text = "Cấu trúc danh mục hàng hóa";
                     f.Size = new Size(1000, 700);
                     f.StartPosition = FormStartPosition.CenterParent;
                     var ctrl = new CategoryManagementControl();
@@ -98,7 +98,9 @@ namespace SmartPos.Module.Products.Views
                 ReadOnly = true,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 BackgroundColor = Color.White,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+                BorderStyle = BorderStyle.None,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                GridColor = Color.FromArgb(236, 240, 241)
             };
             dgvProducts.DoubleClick += (s, e) => { 
                 if (dgvProducts.CurrentRow != null && UserSession.IsAdmin) 
@@ -245,11 +247,23 @@ namespace SmartPos.Module.Products.Views
             if (dgvProducts.Columns["CategoryName"] != null) dgvProducts.Columns["CategoryName"].HeaderText = "Danh mục";
             if (dgvProducts.Columns["RetailPrice"] != null) dgvProducts.Columns["RetailPrice"].HeaderText = "Giá bán";
             if (dgvProducts.Columns["Location"] != null) dgvProducts.Columns["Location"].HeaderText = "Vị trí";
+            if (dgvProducts.Columns["BatchNumber"] != null) dgvProducts.Columns["BatchNumber"].HeaderText = "Số Lô";
+            if (dgvProducts.Columns["ExpiryDate"] != null) dgvProducts.Columns["ExpiryDate"].HeaderText = "HSD";
             if (dgvProducts.Columns["StockQuantity"] != null) dgvProducts.Columns["StockQuantity"].HeaderText = "Tồn kho";
             if (dgvProducts.Columns["IsActive"] != null) dgvProducts.Columns["IsActive"].HeaderText = "Hoạt động";
 
             if (dgvProducts.Columns["RetailPrice"] != null) dgvProducts.Columns["RetailPrice"].DefaultCellStyle.Format = "N0";
             if (dgvProducts.Columns["StockQuantity"] != null) dgvProducts.Columns["StockQuantity"].DefaultCellStyle.Format = "N2";
+            if (dgvProducts.Columns["ExpiryDate"] != null) dgvProducts.Columns["ExpiryDate"].DefaultCellStyle.Format = "dd/MM/yyyy";
+
+            // Professional styling
+            dgvProducts.EnableHeadersVisualStyles = false;
+            dgvProducts.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 73, 94);
+            dgvProducts.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvProducts.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            dgvProducts.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(52, 73, 94);
+            dgvProducts.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(245, 246, 250);
+            dgvProducts.RowTemplate.Height = 35;
         }
 
         private void ShowEditor(int productId)

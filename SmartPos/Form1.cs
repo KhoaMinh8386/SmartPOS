@@ -22,27 +22,125 @@ namespace SmartPos
         public Form1()
         {
             InitializeComponent();
-            EnsureDatabaseSchema(); // Tự động sửa lỗi thiếu cột
-            SetupCustomControls();
+            EnsureDatabaseSchema();
+            SetupModernUi();
             this.Load += Form1_Load;
             this.Shown += Form1_Shown;
             this.AcceptButton = btnLogin;
         }
 
-        private void SetupCustomControls()
+        private void SetupModernUi()
         {
-            // Nút toggle password
-            btnTogglePassword = new Button();
-            btnTogglePassword.Size = new Size(25, 25);
-            btnTogglePassword.Location = new Point(txtPassword.Width - 30, 0);
-            btnTogglePassword.Cursor = Cursors.Hand;
-            btnTogglePassword.FlatStyle = FlatStyle.Flat;
+            this.Text = "SmartPOS - Đăng nhập";
+            this.Size = new Size(900, 600);
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.BackColor = Color.FromArgb(15, 23, 42); // Slate 900
+
+            // Form shadow/border
+            this.Paint += (s, e) => {
+                using (LinearGradientBrush brush = new LinearGradientBrush(this.ClientRectangle, Color.FromArgb(30, 41, 59), Color.FromArgb(15, 23, 42), 45f))
+                {
+                    e.Graphics.FillRectangle(brush, this.ClientRectangle);
+                }
+            };
+
+            // Main Card
+            panelCard.Size = new Size(450, 480);
+            panelCard.Location = new Point((this.Width - panelCard.Width) / 2, (this.Height - panelCard.Height) / 2);
+            panelCard.BackColor = Color.White;
+            panelCard.BorderStyle = BorderStyle.None;
+            
+            // Round corners for panelCard (simulated with Region)
+            GraphicsPath path = new GraphicsPath();
+            int radius = 20;
+            path.AddArc(0, 0, radius, radius, 180, 90);
+            path.AddArc(panelCard.Width - radius, 0, radius, radius, 270, 90);
+            path.AddArc(panelCard.Width - radius, panelCard.Height - radius, radius, radius, 0, 90);
+            path.AddArc(0, panelCard.Height - radius, radius, radius, 90, 90);
+            panelCard.Region = new Region(path);
+
+            // Title & Subtitle
+            lblTitle.Text = "SmartPOS";
+            lblTitle.Font = new Font("Segoe UI Semibold", 28, FontStyle.Bold);
+            lblTitle.ForeColor = Color.FromArgb(37, 99, 235); // Blue 600
+            lblTitle.Location = new Point(0, 95);
+            lblTitle.Width = panelCard.Width;
+            lblTitle.Height = 50; // Tăng chiều cao để không bị mất chữ
+            lblTitle.TextAlign = ContentAlignment.MiddleCenter;
+
+            lblSubtitle.Text = "Hệ thống quản lý bán hàng & kho";
+            lblSubtitle.Font = new Font("Segoe UI", 10);
+            lblSubtitle.ForeColor = Color.FromArgb(100, 116, 139);
+            lblSubtitle.Location = new Point(0, 145);
+            lblSubtitle.Width = panelCard.Width;
+            lblSubtitle.Height = 30;
+            lblSubtitle.TextAlign = ContentAlignment.MiddleCenter;
+
+            // Inputs
+            int inputWidth = 350;
+            int inputX = (panelCard.Width - inputWidth) / 2;
+
+            lblUsername.Text = "Tên đăng nhập hoặc Email";
+            lblUsername.Font = new Font("Segoe UI Semibold", 9.5F);
+            lblUsername.Location = new Point(inputX, 190);
+            lblUsername.AutoSize = true;
+
+            txtUsername.Size = new Size(inputWidth, 35);
+            txtUsername.Location = new Point(inputX, 215);
+            txtUsername.BorderStyle = BorderStyle.FixedSingle;
+            txtUsername.Font = new Font("Segoe UI", 12);
+
+            lblPassword.Text = "Mật khẩu";
+            lblPassword.Font = new Font("Segoe UI Semibold", 9.5F);
+            lblPassword.Location = new Point(inputX, 265);
+            lblPassword.AutoSize = true;
+
+            txtPassword.Size = new Size(inputWidth, 35);
+            txtPassword.Location = new Point(inputX, 290);
+            txtPassword.BorderStyle = BorderStyle.FixedSingle;
+            txtPassword.Font = new Font("Segoe UI", 12);
+            txtPassword.UseSystemPasswordChar = true;
+            txtPassword.PasswordChar = '\0'; 
+
+            // Toggle Password Button
+            btnTogglePassword = new Button {
+                Size = new Size(30, 28),
+                Location = new Point(txtPassword.Width - 32, 2),
+                Cursor = Cursors.Hand,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.White,
+                Text = "👁",
+                Font = new Font("Segoe UI", 10)
+            };
             btnTogglePassword.FlatAppearance.BorderSize = 0;
-            btnTogglePassword.BackColor = Color.White;
-            btnTogglePassword.Text = "👁";
-            btnTogglePassword.Font = new Font("Segoe UI", 8);
             btnTogglePassword.Click += BtnTogglePassword_Click;
             txtPassword.Controls.Add(btnTogglePassword);
+
+            chkRemember.Text = "Ghi nhớ đăng nhập";
+            chkRemember.Location = new Point(inputX, 335);
+
+            btnLogin.Text = "ĐĂNG NHẬP";
+            btnLogin.Size = new Size(inputWidth, 48);
+            btnLogin.Location = new Point(inputX, 370);
+            btnLogin.BackColor = Color.FromArgb(37, 99, 235); // Blue 600
+            btnLogin.FlatStyle = FlatStyle.Flat;
+            btnLogin.FlatAppearance.BorderSize = 0;
+            btnLogin.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            btnLogin.ForeColor = Color.White;
+
+            lblError.Text = "Bạn đã nhập sai mật khẩu hoặc tài khoản";
+            lblError.Font = new Font("Segoe UI Semibold", 9);
+            lblError.ForeColor = Color.FromArgb(220, 38, 38); // Red 600
+            lblError.Location = new Point(inputX, 425);
+            lblError.Width = inputWidth;
+            lblError.Height = 40;
+            lblError.TextAlign = ContentAlignment.MiddleCenter;
+            lblError.Visible = false;
+            lblError.BringToFront();
+
+            pictureBoxLogo.Size = new Size(80, 80);
+            pictureBoxLogo.Location = new Point((panelCard.Width - 80) / 2, 15);
         }
 
         private void BtnTogglePassword_Click(object sender, EventArgs e)
@@ -50,6 +148,7 @@ namespace SmartPos
             isPasswordHidden = !isPasswordHidden;
             txtPassword.UseSystemPasswordChar = isPasswordHidden;
             btnTogglePassword.Text = isPasswordHidden ? "👁" : "🔒";
+            txtPassword.Focus();
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -57,7 +156,6 @@ namespace SmartPos
             EnsureDatabaseSchema();
             BuildLogo();
             LoadRememberedLogin();
-            txtPassword.UseSystemPasswordChar = true;
         }
 
         private void EnsureDatabaseSchema()
@@ -244,8 +342,17 @@ namespace SmartPos
                         using (MainForm main = new MainForm())
                         {
                             main.ShowDialog();
+                            if (main.Tag?.ToString() != "Logout")
+                            {
+                                this.Close();
+                                return;
+                            }
                         }
-                        this.Close();
+                        
+                        // Quay lại trang login
+                        txtPassword.Clear();
+                        this.Show();
+                        txtPassword.Focus();
                     }
                     else
                     {

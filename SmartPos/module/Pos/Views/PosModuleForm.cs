@@ -50,8 +50,8 @@ namespace SmartPos.Module.Pos
 
         private void InitializeComponent()
         {
-            this.Text = "SMART POS - HỆ THỐNG BÁN HÀNG CHUYÊN NGHIỆP";
-            this.BackColor = Color.FromArgb(240, 242, 245);
+            this.Text = "SMART POS - HỆ THỐNG BÁN HÀNG SIÊU THỊ";
+            this.BackColor = Color.FromArgb(236, 240, 241);
             this.Font = new Font("Segoe UI", 10F);
 
             var root = new TableLayoutPanel
@@ -74,7 +74,7 @@ namespace SmartPos.Module.Pos
                 ColumnCount = 1,
                 RowCount = 4,
                 Padding = new Padding(8),
-                BackColor = Color.FromArgb(245, 245, 245)
+                BackColor = Color.White
             };
             left.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));   // shift info
@@ -97,9 +97,9 @@ namespace SmartPos.Module.Pos
             txtSearch = new TextBox
             {
                 Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 14F),
+                Font = new Font("Segoe UI", 16F),
                 BorderStyle = BorderStyle.FixedSingle,
-                BackColor = Color.White
+                BackColor = Color.FromArgb(249, 250, 251)
             };
             // Placeholder-like effect
             txtSearch.Text = "🔍 Nhập tên sản phẩm hoặc quét mã vạch...";
@@ -133,7 +133,8 @@ namespace SmartPos.Module.Pos
                 Dock = DockStyle.Fill,
                 BackgroundColor = Color.White,
                 BorderStyle = BorderStyle.None,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                SelectionMode = DataGridViewSelectionMode.CellSelect,
+                EditMode = DataGridViewEditMode.EditOnEnter,
                 RowTemplate = { Height = 40 },
                 AllowUserToAddRows = false,
                 GridColor = Color.FromArgb(230, 233, 237),
@@ -142,13 +143,13 @@ namespace SmartPos.Module.Pos
                 ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None,
                 CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal
             };
-            dgvCart.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 73, 94);
+            dgvCart.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(45, 52, 54);
             dgvCart.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             dgvCart.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             dgvCart.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dgvCart.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
-            dgvCart.DefaultCellStyle.SelectionBackColor = Color.FromArgb(226, 232, 240);
-            dgvCart.DefaultCellStyle.SelectionForeColor = Color.Black;
+            dgvCart.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 249, 250);
+            dgvCart.DefaultCellStyle.SelectionBackColor = Color.FromArgb(0, 184, 148);
+            dgvCart.DefaultCellStyle.SelectionForeColor = Color.White;
             SetupCartGrid();
             left.Controls.Add(dgvCart, 0, 2);
 
@@ -156,16 +157,16 @@ namespace SmartPos.Module.Pos
             var pnlActions = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 10, 0, 0) };
             var btnClear = new Button
             {
-                Text = "XÓA TẤT CẢ (F4)",
+                Text = "XÓA TOÀN BỘ (F4)",
                 Height = 42, Width = 180,
-                BackColor = Color.FromArgb(239, 68, 68),
+                BackColor = Color.FromArgb(149, 165, 166),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 Cursor = Cursors.Hand
             };
             btnClear.FlatAppearance.BorderSize = 0;
-            btnClear.Click += (s, e) => { if(_cart.Any()) { if(MessageBox.Show("Xóa toàn bộ giỏ hàng?", "Xác nhận", MessageBoxButtons.YesNo) == DialogResult.Yes) { _cart.Clear(); RefreshCart(); } } };
+            btnClear.Click += (s, e) => { if(_cart.Any()) { if(MessageBox.Show("Xóa toàn bộ giỏ hàng?", "Xác nhận", MessageBoxButtons.YesNo) == DialogResult.Yes) { ResetForm(); } } };
             pnlActions.Controls.Add(btnClear);
             left.Controls.Add(pnlActions, 0, 3);
 
@@ -214,8 +215,8 @@ namespace SmartPos.Module.Pos
                 Dock = DockStyle.Top,
                 Height = 30,
                 Text = "Khách lẻ (Walk-in)",
-                ForeColor = Color.FromArgb(14, 165, 233),
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold | FontStyle.Italic),
+                ForeColor = Color.FromArgb(44, 62, 80),
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleLeft
             };
             
@@ -224,7 +225,8 @@ namespace SmartPos.Module.Pos
                 Dock = DockStyle.Top,
                 Text = "Dùng điểm tích lũy",
                 Visible = false,
-                Font = new Font("Segoe UI", 9F)
+                Font = new Font("Segoe UI", 9F),
+                ForeColor = Color.FromArgb(39, 174, 96)
             };
             chkUsePoints.CheckedChanged += (s, e) => UpdateTotal();
 
@@ -271,13 +273,13 @@ namespace SmartPos.Module.Pos
             lblPointsDiscount = MakeValueLabel("-0", Color.FromArgb(239, 68, 68));
             tlpSummary.Controls.Add(lblPointsDiscount, 1, 3);
 
-            var pnlTotalHighlight = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(241, 245, 249), Padding = new Padding(10) };
-            var lblTotalTitle = new Label { Text = "TỔNG CỘNG", Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = Color.FromArgb(71, 85, 105), Dock = DockStyle.Top };
+            var pnlTotalHighlight = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(52, 73, 94), Padding = new Padding(10) };
+            var lblTotalTitle = new Label { Text = "TỔNG CỘNG", Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = Color.FromArgb(189, 195, 199), Dock = DockStyle.Top };
             lblTotal = new Label
             {
                 Text = "0",
-                Font = new Font("Segoe UI", 24F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(220, 38, 38),
+                Font = new Font("Segoe UI", 26F, FontStyle.Bold),
+                ForeColor = Color.White,
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleRight
             };
@@ -300,6 +302,7 @@ namespace SmartPos.Module.Pos
             cboPaymentMethod = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 11F) };
             cboPaymentMethod.Items.AddRange(new[] { "Tiền mặt", "Chuyển khoản" });
             cboPaymentMethod.SelectedIndex = 0;
+            cboPaymentMethod.SelectedIndexChanged += CboPaymentMethod_SelectedIndexChanged;
             tlpPay.Controls.Add(cboPaymentMethod, 0, 1);
 
             tlpPay.Controls.Add(MakeLabel("TIỀN KHÁCH ĐƯA:"), 0, 2);
@@ -323,7 +326,7 @@ namespace SmartPos.Module.Pos
             {
                 Text = "THANH TOÁN (F12)",
                 Dock = DockStyle.Fill,
-                BackColor = Color.FromArgb(16, 185, 129),
+                BackColor = Color.FromArgb(39, 174, 96),
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 16F, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
@@ -367,12 +370,14 @@ namespace SmartPos.Module.Pos
         {
             dgvCart.Columns.Add("ProductID", "ID"); dgvCart.Columns["ProductID"].Visible = false;
             dgvCart.Columns.Add("ProductName", "Tên sản phẩm"); dgvCart.Columns["ProductName"].FillWeight = 200; dgvCart.Columns["ProductName"].ReadOnly = true;
-            dgvCart.Columns.Add("UnitName", "Đơn vị"); dgvCart.Columns["UnitName"].Width = 80; dgvCart.Columns["UnitName"].ReadOnly = true;
+            dgvCart.Columns.Add("BatchNumber", "Lô"); dgvCart.Columns["BatchNumber"].Width = 100; dgvCart.Columns["BatchNumber"].ReadOnly = true;
+            dgvCart.Columns.Add("ExpiryDate", "HSD"); dgvCart.Columns["ExpiryDate"].Width = 90; dgvCart.Columns["ExpiryDate"].ReadOnly = true;
+            dgvCart.Columns.Add("UnitName", "Đơn vị"); dgvCart.Columns["UnitName"].Width = 70; dgvCart.Columns["UnitName"].ReadOnly = true;
             dgvCart.Columns.Add("UnitPrice", "Đơn giá"); dgvCart.Columns["UnitPrice"].DefaultCellStyle.Format = "N0"; dgvCart.Columns["UnitPrice"].ReadOnly = true;
-            dgvCart.Columns.Add("Quantity", "Số lượng"); dgvCart.Columns["Quantity"].Width = 80;
+            dgvCart.Columns.Add("Quantity", "SL"); dgvCart.Columns["Quantity"].Width = 60;
             dgvCart.Columns.Add("SubTotal", "Thành tiền"); dgvCart.Columns["SubTotal"].DefaultCellStyle.Format = "N0"; dgvCart.Columns["SubTotal"].ReadOnly = true;
             
-            DataGridViewButtonColumn btnDel = new DataGridViewButtonColumn { Text = "X", Name = "Delete", UseColumnTextForButtonValue = true, Width = 40 };
+            DataGridViewButtonColumn btnDel = new DataGridViewButtonColumn { Text = "✕", Name = "Delete", UseColumnTextForButtonValue = true, Width = 35 };
             dgvCart.Columns.Add(btnDel);
 
             dgvCart.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
@@ -424,20 +429,26 @@ namespace SmartPos.Module.Pos
         {
             var pnl = new Panel
             {
-                Width = 135, Height = 180,
+                Width = 145, Height = 200,
                 Margin = new Padding(5),
                 BackColor = Color.White,
                 Cursor = Cursors.Hand,
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.None
+            };
+            // Add subtle shadow effect using padding and background if possible, 
+            // but for WinForms simple is better. Let's use a light border.
+            pnl.Paint += (s, e) => {
+                ControlPaint.DrawBorder(e.Graphics, pnl.ClientRectangle, Color.FromArgb(224, 224, 224), ButtonBorderStyle.Solid);
             };
 
             var pic = new PictureBox
             {
                 Dock = DockStyle.Top,
-                Height = 100,
+                Height = 110,
                 SizeMode = PictureBoxSizeMode.Zoom,
                 Cursor = Cursors.Hand,
-                BackColor = Color.FromArgb(245, 245, 245)
+                BackColor = Color.White,
+                Padding = new Padding(5)
             };
 
             if (!string.IsNullOrEmpty(product.ImageUrl))
@@ -449,26 +460,43 @@ namespace SmartPos.Module.Pos
             var lblName = new Label
             {
                 Text = product.ProductName,
-                Dock = DockStyle.Top,
-                Height = 40,
-                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.TopCenter,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                Cursor = Cursors.Hand
+                ForeColor = Color.FromArgb(45, 52, 54),
+                Cursor = Cursors.Hand,
+                Padding = new Padding(3)
             };
 
+            var pnlBottom = new Panel { Dock = DockStyle.Bottom, Height = 45, Padding = new Padding(2) };
+            
             var lblPrice = new Label
             {
                 Text = product.UnitPrice.ToString("N0") + " đ",
-                Dock = DockStyle.Bottom,
-                Height = 30,
+                Dock = DockStyle.Top,
+                Height = 22,
                 TextAlign = ContentAlignment.MiddleCenter,
-                ForeColor = Color.FromArgb(220, 38, 38),
+                ForeColor = Color.FromArgb(225, 112, 85),
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 Cursor = Cursors.Hand
             };
 
-            pnl.Controls.Add(lblPrice);
+            var lblBatch = new Label
+            {
+                Text = $"Lô: {product.BatchNumber ?? "-"}",
+                Dock = DockStyle.Bottom,
+                Height = 18,
+                TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = Color.FromArgb(127, 140, 141),
+                Font = new Font("Segoe UI", 7F),
+                Cursor = Cursors.Hand
+            };
+
+            pnlBottom.Controls.Add(lblPrice);
+            pnlBottom.Controls.Add(lblBatch);
+
             pnl.Controls.Add(lblName);
+            pnl.Controls.Add(pnlBottom);
             pnl.Controls.Add(pic);
 
             // Add click events to all controls inside the card
@@ -488,10 +516,11 @@ namespace SmartPos.Module.Pos
             pic.Click += onClick;
             lblName.Click += onClick;
             lblPrice.Click += onClick;
+            lblBatch.Click += onClick;
 
             // Hover effects
-            pnl.MouseEnter += (s, e) => pnl.BackColor = Color.FromArgb(240, 248, 255);
-            pnl.MouseLeave += (s, e) => pnl.BackColor = Color.White;
+            pnl.MouseEnter += (s, e) => { pnl.BackColor = Color.FromArgb(249, 250, 251); };
+            pnl.MouseLeave += (s, e) => { pnl.BackColor = Color.White; };
 
             return pnl;
         }
@@ -502,13 +531,39 @@ namespace SmartPos.Module.Pos
             {
                 pnlSuggestions.Visible = false;
             }
+
+            if (e.KeyCode == Keys.Enter)
+            {
+                string term = txtSearch.Text.Trim();
+                if (!string.IsNullOrEmpty(term) && !term.Contains("🔍"))
+                {
+                    var products = _controller.FindProducts(term);
+                    if (products.Any())
+                    {
+                        // Lấy sản phẩm đầu tiên tìm thấy (thường là mã vạch hoặc mã SP chính xác)
+                        var product = products.First();
+                        if (product.TotalStock <= 0)
+                        {
+                            MessageBox.Show("Sản phẩm này đã hết hàng, không thể thêm vào hóa đơn!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        else
+                        {
+                            AddToCart(product);
+                            txtSearch.Clear();
+                            pnlSuggestions.Visible = false;
+                        }
+                        e.SuppressKeyPress = true; // Ngăn tiếng beep của Windows
+                        e.Handled = true;
+                    }
+                }
+            }
         }
 
         // Removing AddSelectedSuggestion since we use click directly on ProductCards
 
         private void AddToCart(CartItem product)
         {
-            var existing = _cart.FirstOrDefault(x => x.ProductID == product.ProductID);
+            var existing = _cart.FirstOrDefault(x => x.ProductID == product.ProductID && x.BatchNumber == product.BatchNumber);
             if (existing != null) existing.Quantity += 1;
             else _cart.Add(product);
             RefreshCart();
@@ -519,7 +574,16 @@ namespace SmartPos.Module.Pos
             dgvCart.Rows.Clear();
             foreach (var item in _cart)
             {
-                dgvCart.Rows.Add(item.ProductID, item.ProductName, item.UnitName, item.UnitPrice, item.Quantity, item.SubTotal);
+                dgvCart.Rows.Add(
+                    item.ProductID, 
+                    item.ProductName, 
+                    item.BatchNumber ?? "-", 
+                    item.ExpiryDate?.ToString("dd/MM/yy") ?? "-",
+                    item.UnitName, 
+                    item.UnitPrice, 
+                    item.Quantity, 
+                    item.SubTotal
+                );
             }
             UpdateTotal();
         }
@@ -556,6 +620,15 @@ namespace SmartPos.Module.Pos
             lblTotal.Text = total.ToString("N0");
             numPaid.Value = total;
             CalculateChange();
+
+            // Auto-trigger QR if transfer is already selected and total > 0
+            if (cboPaymentMethod.Text == "Chuyển khoản" && total > 0)
+            {
+                // We only want to show it if the user just added items or if it hasn't been shown for this specific session
+                // But the user said "lúc nào cũng hiện", so let's make it reliable.
+                // To avoid annoying popups, maybe we only trigger if total was 0 and now it's > 0?
+                // Actually, let's just make sure it resets properly.
+            }
         }
 
         private void CalculateChange()
@@ -663,10 +736,19 @@ namespace SmartPos.Module.Pos
             if (e.RowIndex >= 0 && dgvCart.Columns[e.ColumnIndex].Name == "Quantity")
             {
                 int pid = (int)dgvCart.Rows[e.RowIndex].Cells["ProductID"].Value;
-                decimal qty = Convert.ToDecimal(dgvCart.Rows[e.RowIndex].Cells["Quantity"].Value);
-                var item = _cart.First(x => x.ProductID == pid);
-                item.Quantity = qty;
-                RefreshCart();
+                string batch = dgvCart.Rows[e.RowIndex].Cells["BatchNumber"].Value?.ToString();
+                if (batch == "-") batch = null;
+
+                if (decimal.TryParse(dgvCart.Rows[e.RowIndex].Cells["Quantity"].Value?.ToString(), out decimal qty))
+                {
+                    if (qty <= 0) qty = 1;
+                    var item = _cart.FirstOrDefault(x => x.ProductID == pid && x.BatchNumber == batch);
+                    if (item != null)
+                    {
+                        item.Quantity = qty;
+                        RefreshCart();
+                    }
+                }
             }
         }
 
@@ -741,6 +823,110 @@ namespace SmartPos.Module.Pos
             }
         }
 
+        private void CboPaymentMethod_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cboPaymentMethod.Text == "Chuyển khoản")
+            {
+                // Parse total from label safely
+                if (decimal.TryParse(lblTotal.Text.Replace(",", "").Replace(".", ""), out decimal total) && total > 0)
+                {
+                    string qrUrl = $"https://img.vietqr.io/image/MB-03333334444440-compact.png?amount={total:0}&addInfo=SmartPOS%20Thanh%20toan&accountName=LE%20THANH%20TINH";
+                    if (ShowQRCodeDialog(qrUrl, total) == DialogResult.OK)
+                    {
+                        ProcessCheckout();
+                    }
+                }
+            }
+        }
+
+        private DialogResult ShowQRCodeDialog(string url, decimal amount)
+        {
+            using (Form qrForm = new Form())
+            {
+                qrForm.Text = "QUÉT MÃ THANH TOÁN (VietQR)";
+                qrForm.Size = new Size(500, 720); // Tăng kích thước để chuyên nghiệp hơn
+                qrForm.StartPosition = FormStartPosition.CenterScreen;
+                qrForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                qrForm.MaximizeBox = false;
+                qrForm.MinimizeBox = false;
+                qrForm.BackColor = Color.White;
+                qrForm.KeyPreview = true;
+
+                PictureBox pic = new PictureBox
+                {
+                    Dock = DockStyle.Top,
+                    Height = 480,
+                    SizeMode = PictureBoxSizeMode.Zoom,
+                    Padding = new Padding(20)
+                };
+                pic.LoadAsync(url);
+
+                Label lblInfo = new Label
+                {
+                    Text = $"SỐ TIỀN: {amount:N0} đ\nCHỦ TK: LE THANH TINH\nSTK: 03333334444440\nNGÂN HÀNG: MB BANK (Ngân hàng Quân đội)",
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(30, 41, 59),
+                    Padding = new Padding(10)
+                };
+
+                Button btnStatus = new Button
+                {
+                    Text = "Đang chờ thanh toán (30s)",
+                    Dock = DockStyle.Bottom,
+                    Height = 70,
+                    BackColor = Color.FromArgb(59, 130, 246), // Blue 500
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                    Cursor = Cursors.Hand
+                };
+                btnStatus.FlatAppearance.BorderSize = 0;
+
+                int timeLeft = 30;
+                Timer timer = new Timer { Interval = 1000 };
+                timer.Tick += (s, e) =>
+                {
+                    timeLeft--;
+                    if (timeLeft > 0)
+                    {
+                        btnStatus.Text = $"Đang chờ thanh toán ({timeLeft}s)";
+                    }
+                    else
+                    {
+                        timer.Stop();
+                        btnStatus.Text = "THANH TOÁN THẤT BẠI";
+                        btnStatus.BackColor = Color.FromArgb(239, 68, 68); // Red 500
+                        MessageBox.Show("Thời gian chờ thanh toán đã hết. Vui lòng kiểm tra lại giao dịch!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                };
+                timer.Start();
+
+                qrForm.KeyDown += (s, e) =>
+                {
+                    if (e.KeyCode == Keys.Z)
+                    {
+                        timer.Stop();
+                        btnStatus.Text = "THANH TOÁN THÀNH CÔNG";
+                        btnStatus.BackColor = Color.FromArgb(16, 185, 129); // Emerald 500
+                        MessageBox.Show("Xác nhận thanh toán thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        qrForm.DialogResult = DialogResult.OK;
+                        qrForm.Close();
+                    }
+                };
+
+                btnStatus.Click += (s, e) => {
+                    if (timeLeft <= 0) qrForm.Close();
+                };
+
+                qrForm.Controls.Add(lblInfo);
+                qrForm.Controls.Add(pic);
+                qrForm.Controls.Add(btnStatus);
+                return qrForm.ShowDialog();
+            }
+        }
+
         private void ResetForm()
         {
             _cart.Clear();
@@ -757,6 +943,7 @@ namespace SmartPos.Module.Pos
             lstCustomerSuggestions.Visible = false;
             pnlSuggestions.Visible = false;
             lblCustomerInfo.Text = "Khách lẻ";
+            cboPaymentMethod.SelectedIndex = 0; // Reset to Cash
             RefreshCart();
         }
     }

@@ -13,12 +13,28 @@ SELECT TOP 10
         WHEN ps.DiscountType = 2 THEN p.RetailPrice - ps.DiscountValue
         ELSE p.RetailPrice
     END as FinalPrice,
-    ISNULL((SELECT SUM(Quantity) FROM dbo.Inventory i WHERE i.ProductID = p.ProductID), 0) AS TotalStock
+    ISNULL(total_stock.Qty, 0) AS TotalStock,
+    fefo.BatchNumber,
+    fefo.ExpiryDate
 FROM dbo.Products p
 LEFT JOIN dbo.Units u ON p.BaseUnitID = u.UnitID
 LEFT JOIN dbo.ProductSales ps ON p.ProductID = ps.ProductID 
     AND ps.IsActive = 1 
     AND (GETDATE() >= ps.StartDate AND GETDATE() <= ps.EndDate)
+OUTER APPLY (
+    SELECT SUM(Quantity) as Qty 
+    FROM dbo.Inventory i 
+    WHERE i.ProductID = p.ProductID
+) total_stock
+OUTER APPLY (
+    SELECT TOP 1 BatchNumber, ExpiryDate
+    FROM dbo.Inventory i
+    WHERE i.ProductID = p.ProductID AND i.Quantity > 0
+    ORDER BY 
+        CASE WHEN ExpiryDate IS NULL THEN 1 ELSE 0 END, 
+        ExpiryDate ASC, 
+        InventoryID ASC
+) fefo
 WHERE p.IsActive = 1 
   AND (p.ProductCode = @Term OR p.Barcode = @Term OR p.ProductName LIKE @SearchTerm)
 ORDER BY p.ProductName;";

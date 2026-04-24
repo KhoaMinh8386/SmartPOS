@@ -147,7 +147,7 @@
     <Compile Include="module\Reports\Views\frmProductReport.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="module\Reports\Views\frmProductDetail.cs">
+    <Compile Include="module\Products\Views\frmProductDetail.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="module\Reports\Views\frmCustomerReport.cs">

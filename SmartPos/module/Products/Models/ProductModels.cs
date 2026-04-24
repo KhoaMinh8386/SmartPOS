@@ -20,6 +20,8 @@ namespace SmartPos.Module.Products.Models
         public decimal RetailPrice { get; set; }
         public string Location { get; set; }
         public decimal StockQuantity { get; set; }
+        public string BatchNumber { get; set; }
+        public DateTime? ExpiryDate { get; set; }
         public bool IsActive { get; set; }
     }
 
@@ -39,6 +41,7 @@ namespace SmartPos.Module.Products.Models
         public decimal? WholesalePrice { get; set; }
         public decimal? Weight { get; set; }
         public string Location { get; set; }
+        public string UnitName { get; set; }
         public bool IsActive { get; set; }
         public bool HasExpiry { get; set; }
     }
