@@ -22,6 +22,7 @@ namespace SmartPos.Module.PurchaseOrders.Views
 
         private ComboBox cboProduct;
         private TextBox txtBatch;
+        private TextBox txtShelfLocation;
         private DateTimePicker dtpManufacture;
         private DateTimePicker dtpExpiry;
         private NumericUpDown numQuantity;
@@ -195,10 +196,13 @@ namespace SmartPos.Module.PurchaseOrders.Views
                 ThousandsSeparator = true
             };
 
+            var lblShelf = new Label { Text = "Kệ", Location = new Point(530, 52), AutoSize = true };
+            txtShelfLocation = new TextBox { Location = new Point(560, 48), Width = 160 };
+
             btnAddItem = new Button
             {
                 Text = "Them dong",
-                Location = new Point(550, 44),
+                Location = new Point(730, 44),
                 Size = new Size(160, 34),
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold)
             };
@@ -207,7 +211,7 @@ namespace SmartPos.Module.PurchaseOrders.Views
             btnViewFefo = new Button
             {
                 Text = "Xem FEFO",
-                Location = new Point(730, 44),
+                Location = new Point(900, 44),
                 Size = new Size(160, 34),
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold)
             };
@@ -216,7 +220,7 @@ namespace SmartPos.Module.PurchaseOrders.Views
             lblTotalAmount = new Label
             {
                 Text = "Tong tien: 0",
-                Location = new Point(930, 52),
+                Location = new Point(1070, 52),
                 AutoSize = true,
                 Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(0, 102, 68)
@@ -234,6 +238,8 @@ namespace SmartPos.Module.PurchaseOrders.Views
             panel.Controls.Add(numQuantity);
             panel.Controls.Add(lblCost);
             panel.Controls.Add(numCost);
+            panel.Controls.Add(lblShelf);
+            panel.Controls.Add(txtShelfLocation);
             panel.Controls.Add(btnAddItem);
             panel.Controls.Add(btnViewFefo);
             panel.Controls.Add(lblTotalAmount);
@@ -266,7 +272,8 @@ namespace SmartPos.Module.PurchaseOrders.Views
             dgvItems.KeyDown += dgvItems_KeyDown;
 
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "San pham", DataPropertyName = "ProductDisplay", Width = 280 });
-            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "So lo", DataPropertyName = "BatchNumber", Width = 130 });
+            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "So lo", DataPropertyName = "BatchNumber", Width = 110 });
+            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Kệ/Vị trí", DataPropertyName = "ShelfLocation", Width = 100 });
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "NSX", DataPropertyName = "ManufactureDate", Width = 90, DefaultCellStyle = new DataGridViewCellStyle { Format = "dd/MM/yyyy" } });
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "HSD", DataPropertyName = "ExpiryDate", Width = 90, DefaultCellStyle = new DataGridViewCellStyle { Format = "dd/MM/yyyy" } });
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "So luong", DataPropertyName = "Quantity", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
@@ -304,11 +311,12 @@ namespace SmartPos.Module.PurchaseOrders.Views
                 AutoGenerateColumns = false
             };
 
-            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Product", DataPropertyName = "ProductName", Width = 220 });
-            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Batch", DataPropertyName = "BatchNumber", Width = 140 });
-            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Expiry", DataPropertyName = "ExpiryDate", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Format = "dd/MM/yyyy" } });
-            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Qty", DataPropertyName = "Quantity", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
-            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Warehouse", DataPropertyName = "WarehouseName", Width = 220 });
+            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Sản phẩm", DataPropertyName = "ProductName", Width = 220 });
+            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Số lô", DataPropertyName = "BatchNumber", Width = 120 });
+            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Kệ/Vị trí", DataPropertyName = "ShelfLocation", Width = 100 });
+            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "HSD", DataPropertyName = "ExpiryDate", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Format = "dd/MM/yyyy" } });
+            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Số lượng", DataPropertyName = "Quantity", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
+            dgvFefo.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Nhà kho", DataPropertyName = "WarehouseName", Width = 220 });
 
             panel.Controls.Add(dgvFefo);
             panel.Controls.Add(lbl);
@@ -376,6 +384,7 @@ namespace SmartPos.Module.PurchaseOrders.Views
                 UnitID = selectedProduct.BaseUnitID,
                 ProductDisplay = selectedProduct.DisplayText,
                 BatchNumber = batchNumber,
+                ShelfLocation = txtShelfLocation.Text.Trim(),
                 ManufactureDate = mfg,
                 ExpiryDate = exp,
                 Quantity = quantity,
@@ -386,6 +395,7 @@ namespace SmartPos.Module.PurchaseOrders.Views
             UpdateTotalAmount();
 
             txtBatch.Clear();
+            txtShelfLocation.Clear();
             numQuantity.Value = 0;
             numCost.Value = 0;
         }

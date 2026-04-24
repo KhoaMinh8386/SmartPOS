@@ -23,6 +23,7 @@ namespace SmartPos.Module.Pos
         public int UnitID { get; set; }
         public string UnitName { get; set; }
         public string ImageUrl { get; set; }
+        public decimal TotalStock { get; set; }
     }
 
     public class InvoiceListItem

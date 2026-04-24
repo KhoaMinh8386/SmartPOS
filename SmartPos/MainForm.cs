@@ -11,6 +11,8 @@ using SmartPos.Module.PurchaseOrders.Views;
 using SmartPos.Module.Suppliers.Views;
 using SmartPos.Module.Reports.Views;
 using SmartPos.Module.Loyalty.Views;
+using SmartPos.Module.XuatHang.Views;
+using SmartPos.Module.LichSuKiemXuat.Views;
 
 
 namespace SmartPos
@@ -56,6 +58,8 @@ namespace SmartPos
             AddMenuButton("🏭 Nhà cung cấp", "Suppliers", UserSession.IsManager);
             AddMenuButton("📥 Nhập hàng", "PurchaseOrders", UserSession.IsManager);
             AddMenuButton("🔍 Kiểm kê kho", "Inventory", UserSession.IsManager);
+            AddMenuButton("📤 Xuất hàng", "StockOut", UserSession.IsManager);
+            AddMenuButton("📜 Lịch sử kiểm xuất", "StockHistory", UserSession.IsManager);
             AddMenuButton("🎫 Khuyến mãi", "Promotions", UserSession.IsManager);
             AddMenuButton("👤 Khách hàng", "Customers", true);
             AddMenuButton("💖 Khách hàng thân thiết", "Loyalty", true);
@@ -210,6 +214,12 @@ namespace SmartPos
                     break;
                 case "purchaseorders":
                     moduleControl = new PurchaseOrderModuleForm { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
+                    break;
+                case "stockout":
+                    moduleControl = new frmStockOut { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
+                    break;
+                case "stockhistory":
+                    moduleControl = new frmStockHistory { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
                     break;
                 case "suppliers":
                     moduleControl = new SupplierModuleForm { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };

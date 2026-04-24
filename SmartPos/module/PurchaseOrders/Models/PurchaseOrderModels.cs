@@ -60,6 +60,7 @@ namespace SmartPos.Module.PurchaseOrders.Models
         public int UnitID { get; set; }
         public string ProductDisplay { get; set; }
         public string BatchNumber { get; set; }
+        public string ShelfLocation { get; set; }
         public DateTime? ManufactureDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public decimal Quantity { get; set; }
@@ -89,6 +90,7 @@ namespace SmartPos.Module.PurchaseOrders.Models
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public string BatchNumber { get; set; }
+        public string ShelfLocation { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public decimal Quantity { get; set; }
         public string WarehouseName { get; set; }

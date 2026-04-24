@@ -4,9 +4,21 @@ namespace SmartPos.Module.Pos
     {
         public const string FindProduct = @"
 SELECT TOP 10 
-    p.ProductID, p.ProductCode, p.ProductName, p.RetailPrice, u.UnitName, p.ImageUrl
+    p.ProductID, p.ProductCode, p.ProductName, p.RetailPrice, p.BaseUnitID, u.UnitName, p.ImageUrl,
+    ISNULL(ps.SaleID, 0) as SaleID,
+    CASE 
+        WHEN ps.SaleID IS NULL THEN p.RetailPrice
+        WHEN ps.SalePrice > 0 THEN ps.SalePrice
+        WHEN ps.DiscountType = 1 THEN p.RetailPrice * (1 - ps.DiscountValue / 100)
+        WHEN ps.DiscountType = 2 THEN p.RetailPrice - ps.DiscountValue
+        ELSE p.RetailPrice
+    END as FinalPrice,
+    ISNULL((SELECT SUM(Quantity) FROM dbo.Inventory i WHERE i.ProductID = p.ProductID), 0) AS TotalStock
 FROM dbo.Products p
 LEFT JOIN dbo.Units u ON p.BaseUnitID = u.UnitID
+LEFT JOIN dbo.ProductSales ps ON p.ProductID = ps.ProductID 
+    AND ps.IsActive = 1 
+    AND (GETDATE() >= ps.StartDate AND GETDATE() <= ps.EndDate)
 WHERE p.IsActive = 1 
   AND (p.ProductCode = @Term OR p.Barcode = @Term OR p.ProductName LIKE @SearchTerm)
 ORDER BY p.ProductName;";

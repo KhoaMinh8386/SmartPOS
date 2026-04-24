@@ -22,6 +22,21 @@ BEGIN
 
     CREATE INDEX IX_SupplierPayment_SupplierID ON dbo.SupplierPayment(SupplierID);
     CREATE INDEX IX_SupplierPayment_POID       ON dbo.SupplierPayment(PurchaseOrderID);
+END;
+
+IF COL_LENGTH('dbo.PurchaseOrderItems', 'ShelfLocation') IS NULL
+BEGIN
+    ALTER TABLE dbo.PurchaseOrderItems ADD ShelfLocation NVARCHAR(50) NULL;
+END
+
+IF COL_LENGTH('dbo.Inventory', 'ShelfLocation') IS NULL
+BEGIN
+    ALTER TABLE dbo.Inventory ADD ShelfLocation NVARCHAR(50) NULL;
+END
+
+IF COL_LENGTH('dbo.StockOutDetails', 'ShelfLocation') IS NULL
+BEGIN
+    ALTER TABLE dbo.StockOutDetails ADD ShelfLocation NVARCHAR(50) NULL;
 END;";
 
         public const string GetSuppliers = @"
@@ -57,9 +72,9 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
         public const string AddPurchaseOrderItem = @"
 INSERT INTO dbo.PurchaseOrderItems
-    (PurchaseOrderID, ProductID, UnitID, ConversionRate, Quantity, CostPrice, BatchNumber, ManufactureDate, ExpiryDate)
+    (PurchaseOrderID, ProductID, UnitID, ConversionRate, Quantity, CostPrice, BatchNumber, ShelfLocation, ManufactureDate, ExpiryDate)
 VALUES
-    (@PurchaseOrderID, @ProductID, @UnitID, 1, @Quantity, @CostPrice, @BatchNumber, @ManufactureDate, @ExpiryDate);";
+    (@PurchaseOrderID, @ProductID, @UnitID, 1, @Quantity, @CostPrice, @BatchNumber, @ShelfLocation, @ManufactureDate, @ExpiryDate);";
 
         public const string UpsertInventory = @"
 IF EXISTS (
@@ -68,6 +83,7 @@ IF EXISTS (
     WHERE WarehouseID = @WarehouseID
       AND ProductID = @ProductID
       AND ISNULL(BatchNumber, '') = ISNULL(@BatchNumber, '')
+      AND ISNULL(ShelfLocation, '') = ISNULL(@ShelfLocation, '')
 )
 BEGIN
     UPDATE dbo.Inventory
@@ -78,14 +94,15 @@ BEGIN
         UpdatedAt = GETDATE()
     WHERE WarehouseID = @WarehouseID
       AND ProductID = @ProductID
-      AND ISNULL(BatchNumber, '') = ISNULL(@BatchNumber, '');
+      AND ISNULL(BatchNumber, '') = ISNULL(@BatchNumber, '')
+      AND ISNULL(ShelfLocation, '') = ISNULL(@ShelfLocation, '');
 END
 ELSE
 BEGIN
     INSERT INTO dbo.Inventory
-        (WarehouseID, ProductID, BatchNumber, ManufactureDate, ExpiryDate, Quantity, CostPrice, UpdatedAt)
+        (WarehouseID, ProductID, BatchNumber, ShelfLocation, ManufactureDate, ExpiryDate, Quantity, CostPrice, UpdatedAt)
     VALUES
-        (@WarehouseID, @ProductID, @BatchNumber, @ManufactureDate, @ExpiryDate, @Quantity, @CostPrice, GETDATE());
+        (@WarehouseID, @ProductID, @BatchNumber, @ShelfLocation, @ManufactureDate, @ExpiryDate, @Quantity, @CostPrice, GETDATE());
 END;";
 
         public const string GetFefoBatches = @"
@@ -95,6 +112,7 @@ SELECT
     p.ProductCode,
     p.ProductName,
     i.BatchNumber,
+    i.ShelfLocation,
     i.ExpiryDate,
     i.Quantity,
     w.WarehouseName

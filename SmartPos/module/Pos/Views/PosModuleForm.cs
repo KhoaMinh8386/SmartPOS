@@ -402,6 +402,10 @@ namespace SmartPos.Module.Pos
                 pnlSuggestions.Controls.Clear();
                 foreach (var prod in products)
                 {
+                    if (prod.TotalStock <= 0)
+                    {
+                        prod.ProductName += " (Hết hàng)";
+                    }
                     var card = CreateProductCard(prod);
                     pnlSuggestions.Controls.Add(card);
                 }
@@ -409,8 +413,6 @@ namespace SmartPos.Module.Pos
                 // Position exactly under the search box
                 var pt = txtSearch.PointToScreen(new Point(0, txtSearch.Height));
                 pnlSuggestions.Location = this.PointToClient(pt);
-                // Optional: Make it match the width of the search box or left panel
-                // pnlSuggestions.Width = txtSearch.Width; 
                 
                 pnlSuggestions.Visible = true;
                 pnlSuggestions.BringToFront();
@@ -471,6 +473,11 @@ namespace SmartPos.Module.Pos
 
             // Add click events to all controls inside the card
             EventHandler onClick = (s, e) => {
+                if (product.TotalStock <= 0)
+                {
+                    MessageBox.Show("Sản phẩm này đã hết hàng, không thể thêm vào hóa đơn!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
                 AddToCart(product);
                 txtSearch.Clear();
                 pnlSuggestions.Visible = false;
